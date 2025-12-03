@@ -1,0 +1,3394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=794, height=1123, initial-scale=1" />
+  <title>WDC — Hurricane Melissa & Sonia Situation Brief</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    /* "FUTURISTIC" STYLESHEET
+      - Dark mode by default
+      - Glassmorphism effects
+      - Animations
+    */
+    :root {
+      /* Color Palette (Dark Mode) */
+      --bg: #121212;
+      --card: #1e1e1e;
+      --card-light: #2a2a2a;
+      --text: #e0e0e0;
+      --muted: #888;
+      --border: #333;
+      --un-blue: #0ea5e9;
+      --un-blue-dark: #0284c7;
+      --un-red: #ef4444;
+      --un-red-light: #f87171;
+      --un-orange: #f97316;
+      --un-green: #22c55e;
+      --un-yellow: #eab308;
+     
+      --shadow: 0 4px 16px rgba(0,0,0,0.2);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.3);
+      --radius: 12px;
+      --a4-width: 794px;
+      --a4-height: 1123px; /* A4 aspect ratio */
+    }
+   
+    /* Light Mode Palette */
+    body:not(.dark-mode) {
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --card-light: #f0f0f0;
+      --text: #1b1b1a;
+      --muted: #6c757d;
+      --border: #dee2e6;
+      --un-blue: #009edb;
+      --un-blue-dark: #0074b7;
+      --un-red: #d90429;
+      --un-red-light: #ef233c;
+      --un-orange: #f77f00;
+      --un-green: #72bf44;
+      --un-yellow: #ffc800;
+      --shadow: 0 4px 16px rgba(0,0,0,0.07);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
+    }
+    /* Base & Animations */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+   
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse-red {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+   
+    @keyframes pulse-blue {
+      0% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(14, 165, 233, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+    }
+    body, html {
+      font-family: 'Inter', sans-serif;
+      background: #333; /* Outer background */
+      color: var(--text);
+      line-height: 1.5;
+      margin: 0;
+      padding: 0;
+    }
+    .page {
+      width: var(--a4-width);
+      min-height: var(--a4-height);
+      margin: 20px auto;
+      padding: 28px 32px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: fadeIn 0.8s ease-out;
+    }
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--un-blue);
+    }
+    .logo {
+      width: 78px;
+      height: 78px;
+      background: var(--card-light);
+      border-radius: 12px;
+      padding: 6px;
+      box-shadow: var(--shadow);
+      flex-shrink: 0;
+    }
+    .logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .title-block { flex: 1; margin-left: 16px; }
+    .title { font-size: 22px; font-weight: 800; color: var(--un-blue); letter-spacing: -0.3px; }
+    .subtitle { font-size: 11.5px; color: var(--muted); margin-top: 3px; font-weight: 500; }
+    .meta { text-align: right; font-size: 10.5px; color: var(--muted); flex-shrink: 0; }
+    .meta .date { font-weight: 600; color: var(--text); }
+   
+    /* Theme Toggle */
+    .theme-switch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 5px;
+      cursor: pointer;
+    }
+    .toggle-track {
+      width: 40px;
+      height: 20px;
+      background: var(--card-light);
+      border-radius: 10px;
+      padding: 2px;
+      position: relative;
+      transition: background 0.3s;
+    }
+    .toggle-thumb {
+      width: 16px;
+      height: 16px;
+      background: var(--text);
+      border-radius: 50%;
+      position: absolute;
+      transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .theme-switch:hover .toggle-thumb { background: var(--un-blue); }
+    body:not(.dark-mode) .toggle-thumb {
+      transform: translateX(20px);
+    }
+    .theme-switch .icon { width: 16px; height: 16px; color: var(--muted); }
+    body.dark-mode .theme-switch .icon-moon { color: var(--un-blue); }
+    body:not(.dark-mode) .theme-switch .icon-sun { color: var(--un-yellow); }
+    /* Key Figures */
+    .key-figures {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .kfig {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      text-align: center;
+      transition: all 0.3s ease-in-out;
+      box-shadow: var(--shadow);
+      opacity: 0; /* For animation */
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+    /* Staggered animation delay */
+    .kfig:nth-child(1) { animation-delay: 0.1s; }
+    .kfig:nth-child(2) { animation-delay: 0.2s; }
+    .kfig:nth-child(3) { animation-delay: 0.3s; }
+    .kfig:nth-child(4) { animation-delay: 0.4s; }
+    .kfig:nth-child(5) { animation-delay: 0.5s; }
+    .kfig:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--un-blue);
+    }
+    .kfig .icon { width: 36px; height: 36px; margin: 0 auto 8px; color: var(--un-blue); }
+    .kfig .value { font-size: 1.6rem; font-weight: 800; color: var(--un-red); }
+    .kfig .label { font-size: 10.5px; color: var(--muted); margin-top: 4px; font-weight: 500; }
+    /* Filters */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 12px 0;
+      align-items: center;
+      background: var(--card);
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      font-size: 11px;
+    }
+    .filter-group { display: flex; align-items: center; gap: 6px; }
+    .filter-group label { font-weight: 600; color: var(--text); white-space: nowrap; }
+    .btn-group { display: flex; gap: 5px; flex-wrap: wrap; }
+    .btn {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card-light);
+      color: var(--text);
+      font-size: 10.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn.active, .btn:hover {
+      background: var(--un-blue);
+      color: #fff;
+      border-color: var(--un-blue);
+      transform: scale(1.05);
+    }
+    /* Timeline Slider */
+    .timeline-container {
+      margin: 12px 0;
+      padding: 10px;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .timeline {
+      position: relative;
+      height: 40px;
+      background: var(--card-light);
+      border-radius: 20px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .timeline-past { background: rgba(239, 68, 68, 0.2); position: absolute; left: 0; top: 0; height: 100%; z-index: 1; }
+    .timeline-future { background: rgba(14, 165, 233, 0.2); position: absolute; right: 0; top: 0; height: 100%; z-index: 1; }
+    .timeline-line { position: absolute; top: 50%; width: 100%; height: 3px; background: var(--un-red-light); transform: translateY(-50%); z-index: 2; }
+    .timeline-today-marker {
+      position: absolute; top: 0; height: 100%; width: 3px;
+      background: var(--un-red);
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.7);
+      transform: translateX(-50%);
+      z-index: 5;
+    }
+    .timeline-thumb {
+      position: absolute; top: 50%; width: 20px; height: 20px;
+      background: var(--un-red); border: 3px solid var(--card);
+      border-radius: 50%; transform: translate(-50%, -50%);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: grab;
+      z-index: 10;
+      transition: transform 0.1s ease;
+    }
+    .timeline:active .timeline-thumb {
+      transform: translate(-50%, -50%) scale(1.2);
+    }
+    .timeline-labels {
+      display: flex; justify-content: space-between; margin-top: 6px; font-size: 10px; color: var(--muted);
+      padding: 0 5px;
+    }
+    #currentDateLabel {
+      font-weight: 700;
+      color: var(--un-red);
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    /* Map */
+    #map {
+      height: 380px; /* Increased height */
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      margin: 16px 0;
+      position: relative;
+      background: #333; /* Darker map bg */
+    }
+    /* Pulsing Bubbles */
+    .map-bubble-past, .map-bubble-future {
+      border-radius: 50%;
+    }
+    .map-bubble-past {
+      animation: pulse-red 2s infinite;
+    }
+    .map-bubble-future {
+      animation: pulse-blue 2s infinite;
+    }
+    .map-legend {
+      position: absolute; bottom: 12px; left: 12px;
+      /* Glassmorphism */
+      background: rgba(30, 30, 30, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 10px 12px; border-radius: 10px; font-size: 10px; z-index: 1000;
+      box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 6px;
+      color: var(--text);
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .legend-swath { width: 18px; height: 10px; opacity: 0.6; border: 1px solid #888; }
+    .hurricane-icon-static { width: 18px; height: 18px; }
+    /* Hurricane Animation */
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .hurricane-icon-svg {
+      animation: spin 6s linear infinite;
+    }
+    /* Sector Table */
+    .sector-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 10.5px;
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .sector-table th {
+      background: var(--un-blue-dark);
+      color: #fff;
+      padding: 10px 8px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 10px;
+    }
+    .sector-table td {
+      padding: 9px 8px;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+    }
+    .sector-table tr:hover td { background: var(--card-light); }
+    .sector-name { font-weight: 600; color: var(--un-blue); white-space: nowrap; }
+    .bar-container {
+      height: 18px; background: var(--card-light); border-radius: 9px; overflow: hidden; position: relative;
+    }
+    .bar-fill {
+      height: 100%; background: var(--un-green); width: 0%; transition: width 0.6s ease;
+    }
+    .bar-fill.low { background: var(--un-red-light); }
+    .bar-fill.med { background: var(--un-yellow); }
+    .bar-label {
+      position: absolute; left: 6px; top: 50%; transform: translateY(-50%);
+      font-size: 9px; color: #111; font-weight: 600; z-index: 1;
+    }
+    .pct { text-align: right; font-weight: 600; color: var(--un-green); }
+    /* Summary & Analysis */
+    .summary-box {
+      background: rgba(234, 179, 8, 0.1);
+      border-left: 5px solid var(--un-yellow);
+      padding: 14px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin: 16px 0;
+      font-size: 11.5px;
+      line-height: 1.5;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+    }
+    .summary-box h4 {
+      margin-bottom: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--un-blue);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    /* Analysis Section */
+    .analysis-section {
+      margin: 16px 0;
+    }
+    .analysis-section h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--un-blue);
+      border-bottom: 2px solid var(--un-blue);
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    /* Grid for 5 cards */
+    .analysis-grid.five-cards {
+      grid-template-columns: repeat(5, 1fr);
+    }
+    .analysis-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      font-size: 11px;
+      line-height: 1.45;
+      transition: all 0.3s ease-in-out;
+      opacity: 0; /* For animation */
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+    .analysis-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--un-blue);
+    }
+    .analysis-card h3 {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .analysis-card .icon { color: var(--un-red); }
+    .analysis-card ul {
+      padding-left: 16px;
+      margin: 0;
+      list-style-type: '— ';
+      color: var(--muted);
+    }
+    .analysis-card li { padding-left: 4px; margin-bottom: 4px; }
+    .analysis-card strong { color: var(--un-red-light); }
+    .analysis-card .projection { color: var(--un-blue); font-weight: 600; }
+   
+    /* Charts & Actions */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .chart-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 12px;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease-in-out;
+      border: 1px solid var(--border);
+      opacity: 0; /* For animation */
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+    .chart-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--un-blue);
+    }
+    .chart-card h3 {
+      font-size: 12px; margin-bottom: 8px; color: var(--un-blue);
+      display: flex; align-items: center; gap: 6px; font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .chart-wrap { height: 160px; }
+    /* NEW Resilience Card Styles */
+    .resilience-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      min-height: 236px; /* Match mitigation chart height */
+    }
+    .resilience-content {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .resilience-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--un-green);
+      line-height: 1.2;
+      margin: 4px 0;
+    }
+    .resilience-value span {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .resilience-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 12px 0 8px 0;
+    }
+    .resilience-list {
+      font-size: 10.5px;
+      color: var(--muted);
+      padding-left: 18px;
+      margin: 0;
+    }
+    .resilience-list li {
+      margin-bottom: 4px;
+    }
+    .resilience-list strong {
+      color: var(--un-blue);
+    }
+   
+    /* Footer */
+    footer {
+      margin-top: 20px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--border);
+      font-size: 9.5px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .disclaimer {
+      flex: 1;
+      line-height: 1.4;
+      margin-right: 16px;
+    }
+    .page-no {
+      background: var(--card-light);
+      padding: 4px 8px;
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: 10px;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body class="dark-mode">
+<div class="page">
+  <header>
+    <div class="logo" style="display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: var(--un-blue);">
+      <span>WDC</span>
+    </div>
+    <div class="title-block">
+      <div class="title">HURRICANE SITUATION BRIEF — Melissa & Sonia</div>
+      <div class="subtitle">Impact Analysis (21 Oct – 04 Nov) & 7-Day Projection (05 Nov – 11 Nov)</div>
+    </div>
+    <div class="meta">
+      <div>World Disaster Center (WDC)</div>
+      <div class="date" id="reportDate">04 November 2025, 09:00 EDT</div>
+     
+      <div class="theme-switch" id="themeSwitch" title="Toggle Theme">
+        <i data-lucide="moon" class="icon icon-moon"></i>
+        <div class="toggle-track">
+          <div class="toggle-thumb"></div>
+        </div>
+        <i data-lucide="sun" class="icon icon-sun"></i>
+      </div>
+    </div>
+  </header>
+  <div class="key-figures">
+    <div class="kfig"><div class="icon"><i data-lucide="users"></i></div><div class="value" id="kf-affected">—</div><div class="label">People Affected</div></div>
+    <div class="kfig"><div class="icon"><i data-lucide="home"></i></div><div class="value" id="kf-displaced">—</div><div class="label">Displaced</div></div>
+    <div class="kfig"><div class="icon"><i data-lucide="building-2"></i></div><div class="value" id="kf-houses">—</div><div class="label">Houses Damaged</div></div>
+    <div class="kfig"><div class="icon"><i data-lucide="heart-pulse"></i></div><div class="value" id="kf-dead">—</div><div class="label">Fatalities</div></div>
+    <div class="kfig"><div class="icon"><i data-lucide="dollar-sign"></i></div><div class="value" id="kf-economic">—</div><div class="label">Economic Loss</div></div>
+  </div>
+  <div class="filters">
+    <div class="filter-group">
+      <label>Country:</label>
+      <div class="btn-group" id="countryButtons"></div>
+    </div>
+  </div>
+  <div class="timeline-container">
+    <div class="timeline" id="timeline">
+      <div class="timeline-past" id="pastBar"></div>
+      <div class="timeline-future" id="futureBar"></div>
+      <div class="timeline-line"></div>
+      <div class="timeline-today-marker" id="todayMarker"></div>
+      <div class="timeline-thumb" id="thumb"></div>
+    </div>
+    <div class="timeline-labels">
+      <span id="startDateLabel">21 Oct</span>
+      <span id="currentDateLabel">04 Nov (Today)</span>
+      <span id="endDateLabel">11 Nov</span>
+    </div>
+  </div>
+  <div id="map">
+    <div class="map-legend">
+      <div class="legend-item"><strong>Impact Zones (Past)</strong></div>
+      <div class="legend-item"><div class="legend-swath" style="background:var(--un-red); opacity: 0.4;"></div> High Impact</div>
+      <div class="legend-item"><div class="legend-swath" style="background:var(--un-orange); opacity: 0.4;"></div> Medium Impact</div>
+      <div class="legend-item"><div class="legend-swath" style="background:var(--un-green); opacity: 0.4;"></div> Low Impact</div>
+      <div class="legend-item" style="margin-top: 4px;"><strong>Population</strong></div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(239, 68, 68, 0.7); border: 1px solid var(--un-red);"></div> Past/Current Impact</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(14, 165, 233, 0.7); border: 1px solid var(--un-blue);"></div> Projected Impact</div>
+      <div class="legend-item" style="margin-top: 4px;"><strong>Storm Track</strong></div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--un-red); height: 3px; width: 15px; border-radius: 0;"></div> Past Track</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--un-blue); height: 3px; width: 15px; border-style: dashed; border-radius: 0;"></div> Forecast Track</div>
+      <div class="legend-item">
+        <svg class="hurricane-icon-static" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2"><path d="M21 12A9 9 0 1 1 3 12a9 9 0 0 1 18 0Z" stroke-opacity="0.5"/><path d="M12 2v4M12 18v4M4 12H2M22 12h-2M6 6l-2-2M18 18l2 2M6 18l-2 2M18 6l2 2" stroke-linecap="round"/><circle cx="12" cy="12" r="2" fill="var(--text)" stroke="none"/></svg>
+        Current Position
+      </div>
+    </div>
+  </div>
+  <table class="sector-table" id="sectorTable">
+    <thead>
+      <tr>
+        <th>Cluster</th>
+        <th>Targeted</th>
+        <th>Reached</th>
+        <th>Requirements (US$)</th>
+        <th>Funding (US$)</th>
+        <th>Unmet (US$)</th>
+        <th>% Funded</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <div class="summary-box" id="summaryBox">
+    <h4><i data-lucide="alert-triangle"></i> WDC Situation Overview</h4>
+    <div id="summaryText">
+      Loading analysis for the selected date...
+    </div>
+  </div>
+  <div class="analysis-section">
+    <h2><i data-lucide="activity"></i> Priority Analysis & Projections</h2>
+    <div class="analysis-grid five-cards">
+    
+      <div class="analysis-card" style="animation-delay: 0.6s;">
+        <h3><i data-lucide="zap-off" class="icon"></i> Infrastructure</h3>
+        <ul id="analysis-infra"></ul>
+      </div>
+      <div class="analysis-card" style="animation-delay: 0.7s;">
+        <h3><i data-lucide="truck" class="icon"></i> Logistics & Access</h3>
+        <ul id="analysis-logistics"></ul>
+      </div>
+    
+      <div class="analysis-card" style="animation-delay: 0.8s;">
+        <h3><i data-lucide="syringe" class="icon"></i> Public Health</h3>
+        <ul id="analysis-health"></ul>
+      </div>
+    
+      <div class="analysis-card" style="animation-delay: 0.9s;">
+        <h3><i data-lucide="anchor" class="icon"></i> Supply Chain</h3>
+        <ul id="analysis-supply"></ul>
+      </div>
+      <div class="analysis-card" style="animation-delay: 1.0s;">
+        <h3><i data-lucide="antenna" class="icon"></i> Comms & Sentiment</h3>
+        <ul id="analysis-comms"></ul>
+      </div>
+    </div>
+  </div>
+  <div class="charts-row">
+    <div class="chart-card" style="animation-delay: 1.1s;">
+      <h3><i data-lucide="trending-up"></i> Impact Trend & Projection</h3>
+      <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+    </div>
+    <div class="chart-card" style="animation-delay: 1.2s;">
+      <h3><i data-lucide="pie-chart"></i> Sector Funding Status</h3>
+      <div class="chart-wrap"><canvas id="fundingChart"></canvas></div>
+    </div>
+  </div>
+  <div class="analysis-section" id="cashSection">
+    <h2><i data-lucide="dollar-sign"></i> Cash Transfer Readiness</h2>
+    <table class="sector-table" id="cashTable">
+      <thead>
+        <tr>
+          <th>Location</th>
+          <th>Feasible</th>
+          <th>Partner</th>
+          <th>Mobile %</th>
+          <th>Bank %</th>
+          <th>Agent Km</th>
+          <th>Security</th>
+          <th>Target HH</th>
+          <th>Reached HH</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="charts-row">
+  
+    <div class="chart-card" style="animation-delay: 1.3s;">
+      <h3><i data-lucide="shield-check"></i> Critical Mitigation Actions (Immediate)</h3>
+      <div class="chart-wrap" style="height: 220px;"><canvas id="mitigationChart"></canvas></div>
+    </div>
+    <div class="chart-card resilience-card" style="animation-delay: 1.4s;">
+      <h3><i data-lucide="line-chart"></i> Long-Term Resilience & Adaptation</h3>
+      <div class="resilience-content">
+        <div class="resilience-value">$75B
+          <span>10-Year Regional Fund</span>
+        </div>
+        <div class="resilience-label">Priority Investments to Prevent Future Catastrophe:</div>
+        <ul class="resilience-list">
+          <li><strong>Infrastructure Hardening:</strong> Upgrading sea walls, bridges, and burying power grids.</li>
+          <li><strong>Next-Gen EWS:</strong> AI-powered forecast models & last-mile community alert systems.</li>
+          <li><strong>Climate-Resilient Ecosystems:</strong> Mangrove restoration (storm surge) & food security programs.</li>
+          <li><strong>Regional Policy:</strong> Establishing a pan-island adaptation fund & pooled insurance.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <footer>
+    <div class="disclaimer">
+      <strong>Disclaimer:</strong> The boundaries and names shown and the designations used on this map do not imply official endorsement or acceptance by the World Disaster Center. Data sources: NOAA/NHC, IFRC, WFP, OCHA, local EMAs, Public Sentiment Analysis (AI). All figures are estimates.
+    </div>
+    <div class="page-no">1</div>
+  </footer>
+</div>
+<script>
+  // === LUCIDE ICONS ===
+  lucide.createIcons();
+  // GEOJSON_DATA here
+  const GEOJSON_DATA = {
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-77.2975, 18.1096]
+      },
+      "properties": {
+        "id": 10238,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": null,
+        "admin2_name": null,
+        "impact_zone": "High",
+        "data_source": "PAHO, OCHA, IOM, CBS, AP, USA Today, BBC, CARE, ReliefWeb, NPR",
+        "population_pre_disaster": 2800000,
+        "people_affected": 1950000,
+        "households_affected": 457143,
+        "people_displaced": 25000,
+        "fatalities_confirmed": 35,
+        "injured": 12,
+        "houses_damaged": 52000,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": 22000000000,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "High",
+        "dengue_alert": false,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": null,
+        "airport_status": "Closed",
+        "port_status": "70%",
+        "mobile_network_coverage_pct": 35,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 18.5,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T09:00:00Z",
+        "data_confidence_level": 4,
+        "data_last_verified_by": "PAHO",
+        "notes": "Extensive damage including power outages affecting 70% of population; 268 shelters activated; widespread destruction, 72% without power."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-77.7, 18.05]
+      },
+      "properties": {
+        "id": 10239,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": "St. Elizabeth",
+        "admin2_name": null,
+        "impact_zone": "High",
+        "data_source": "PAHO, IOM, BBC",
+        "population_pre_disaster": 150000,
+        "people_affected": 150000,
+        "households_affected": 42857,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": 3,
+        "airport_status": "Restricted",
+        "port_status": "70%",
+        "mobile_network_coverage_pct": 78,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": 4200000,
+        "funding_received_usd": 780000,
+        "percent_funded": 18.5,
+        "cash_target_households": 3000,
+        "cash_reached_households": 1150,
+        "last_updated": "2025-11-04T09:00:00Z",
+        "data_confidence_level": 4,
+        "data_last_verified_by": "WDC_Field_JM_02",
+        "notes": "Underwater; Black River Hospital inoperable due to roof collapse and flooding; knee-deep mud, washed-out bridges, towns cut off."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-77.851, 18.0264]
+      },
+      "properties": {
+        "id": 10240,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": "St. Elizabeth",
+        "admin2_name": "Black River",
+        "impact_zone": "High",
+        "data_source": "PAHO, CBS, BBC, NPR",
+        "population_pre_disaster": 42300,
+        "people_affected": 28000,
+        "households_affected": 6700,
+        "people_displaced": 9800,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": 12400000,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": 3,
+        "airport_status": "Restricted",
+        "port_status": "70%",
+        "mobile_network_coverage_pct": 78,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": 4200000,
+        "funding_received_usd": 780000,
+        "percent_funded": 18.5,
+        "cash_target_households": 3000,
+        "cash_reached_households": 1150,
+        "last_updated": "2025-11-04T09:00:00Z",
+        "data_confidence_level": 4,
+        "data_last_verified_by": "WDC",
+        "notes": "Port access limited; cash feasible by mobile only; hospital damaged; road swamped with sand; homes flooded and damaged."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-77.8939, 18.4762]
+      },
+      "properties": {
+        "id": 10241,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": "Saint James",
+        "admin2_name": "Montego Bay",
+        "impact_zone": "High",
+        "data_source": "Posts, PAHO, CBS",
+        "population_pre_disaster": 110000,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": 0,
+        "airport_status": "Closed",
+        "port_status": null,
+        "mobile_network_coverage_pct": 78,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 18.5,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "IOM",
+        "notes": "Submerged towns; Sangster International Airport closed; resident escaped floodwaters up to neck; waded through mud and debris."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-77.5167, 18.0667]
+      },
+      "properties": {
+        "id": 10242,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": "Manchester",
+        "admin2_name": null,
+        "impact_zone": "High",
+        "data_source": "PAHO, Jamaica Observer",
+        "population_pre_disaster": 190000,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 78,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 18.5,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "PAHO",
+        "notes": "WASH disruptions due to high turbidity; flattened town; petrol station lost roof and pumps."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-78.156, 18.294]
+      },
+      "properties": {
+        "id": 10243,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": "Westmoreland",
+        "admin2_name": null,
+        "impact_zone": "High",
+        "data_source": "OCHA",
+        "population_pre_disaster": 144000,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": 9,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 78,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 18.5,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 4,
+        "data_last_verified_by": "OCHA",
+        "notes": "Demolished homes and buildings."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-77.8833, 18.3833]
+      },
+      "properties": {
+        "id": 10244,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": "Saint James",
+        "admin2_name": null,
+        "impact_zone": "High",
+        "data_source": "PAHO",
+        "population_pre_disaster": 184000,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": 2,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 78,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 18.5,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "PAHO",
+        "notes": "Cornwall Regional Hospital damaged due to flooding."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-77.0564, 18.0369]
+      },
+      "properties": {
+        "id": 10245,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": "St Catherine",
+        "admin2_name": null,
+        "impact_zone": "Medium",
+        "data_source": "Posts, Jamaica Observer",
+        "population_pre_disaster": 518000,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": 1,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "Moderate",
+        "dengue_alert": false,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 78,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 18.5,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "Jamaica Observer",
+        "notes": "Indirect fatality during preparations; projected path inland."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-78.133, 18.417]
+      },
+      "properties": {
+        "id": 10246,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": "Hanover",
+        "admin2_name": null,
+        "impact_zone": "High",
+        "data_source": "PAHO",
+        "population_pre_disaster": 70000,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": 1,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 78,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 18.5,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "PAHO",
+        "notes": "Noel Holmes Hospital damaged."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-77.975, 18.1]
+      },
+      "properties": {
+        "id": 10247,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": "St. Elizabeth",
+        "admin2_name": "New Hope",
+        "impact_zone": "High",
+        "data_source": "Posts, CARE",
+        "population_pre_disaster": null,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 78,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 18.5,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 4,
+        "data_last_verified_by": "Posts",
+        "notes": "Landfall location; lost homes and livelihoods."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.7931, 17.9714]
+      },
+      "properties": {
+        "id": 10248,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": "Kingston",
+        "admin2_name": null,
+        "impact_zone": "Medium",
+        "data_source": "PAHO",
+        "population_pre_disaster": 584000,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "Moderate",
+        "dengue_alert": false,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": 0,
+        "airport_status": "Closed",
+        "port_status": null,
+        "mobile_network_coverage_pct": 78,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 18.5,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "PAHO",
+        "notes": "Norman Manley International Airport closed; at risk from storm surge."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-77.91, 18.09]
+      },
+      "properties": {
+        "id": 10265,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": "St. Elizabeth",
+        "admin2_name": "Lacovia",
+        "impact_zone": "High",
+        "data_source": "AP, NPR",
+        "population_pre_disaster": null,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 78,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 18.5,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T09:00:00Z",
+        "data_confidence_level": 4,
+        "data_last_verified_by": "AP",
+        "notes": "Lost house; only bicycle left; roofless structures; waterlogged belongings; Church of Lacovia Tombstone damaged."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-77.507, 18.0417]
+      },
+      "properties": {
+        "id": 10266,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": "Manchester",
+        "admin2_name": "Mandeville",
+        "impact_zone": "High",
+        "data_source": "BBC",
+        "population_pre_disaster": null,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 78,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 18.5,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T09:00:00Z",
+        "data_confidence_level": 4,
+        "data_last_verified_by": "BBC",
+        "notes": "Flattened town; petrol station lost its roof and most of its pumps; corridor directly in the path of the eye."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-77.6559, 18.4936]
+      },
+      "properties": {
+        "id": 10267,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": "Trelawny",
+        "admin2_name": "Falmouth",
+        "impact_zone": "High",
+        "data_source": "USA Today, PAHO",
+        "population_pre_disaster": null,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 78,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 18.5,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T09:00:00Z",
+        "data_confidence_level": 4,
+        "data_last_verified_by": "USA Today",
+        "notes": "Severely damaged due to storm surge flooding; partial evacuation; services disrupted; RIU Aquarelle resort experienced wind and rain."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-78.348, 18.268]
+      },
+      "properties": {
+        "id": 10268,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": "Westmoreland",
+        "admin2_name": "Negril",
+        "impact_zone": "High",
+        "data_source": "NHC",
+        "population_pre_disaster": null,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 78,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 18.5,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T09:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "NHC",
+        "notes": "SSE of Negril; conditions deteriorating."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-77.24, 17.955]
+      },
+      "properties": {
+        "id": 10269,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": "Clarendon",
+        "admin2_name": null,
+        "impact_zone": "High",
+        "data_source": "Jamaica Observer, PAHO",
+        "population_pre_disaster": null,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 78,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 18.5,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T09:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "Jamaica Observer",
+        "notes": "Landfall possible near Clarendon; storm surge up to 13 feet."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.915, 18.313]
+      },
+      "properties": {
+        "id": 10270,
+        "disaster_event_id": "MELISSA_2025_JM",
+        "country": "Jamaica",
+        "admin1_name": "St Mary",
+        "admin2_name": null,
+        "impact_zone": "High",
+        "data_source": "Jamaica Observer",
+        "population_pre_disaster": null,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 145,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 38,
+        "health_facilities_operational_pct": 60,
+        "roads_accessible_pct": 45,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 78,
+        "internet_connectivity_pct": 52,
+        "market_open": true,
+        "market_price_index": 1.45,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Digicel",
+        "mobile_money_access_pct": 64,
+        "bank_account_access_pct": 47,
+        "agent_distance_km": 3.2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 31,
+        "elderly_pct": 14,
+        "children_under5_pct": 8,
+        "disabled_pct": 6,
+        "refugee_or_migrant_pct": 3,
+        "priority_score": 88,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 18.5,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T09:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "Jamaica Observer",
+        "notes": "Projected path exiting the island near St Mary."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-72.2852, 18.9712]
+      },
+      "properties": {
+        "id": 10249,
+        "disaster_event_id": "MELISSA_2025_HT",
+        "country": "Haiti",
+        "admin1_name": null,
+        "admin2_name": null,
+        "impact_zone": "High",
+        "data_source": "PAHO, OCHA, AP, USA Today, BBC, CARE, ReliefWeb, NPR",
+        "population_pre_disaster": 11500000,
+        "people_affected": 1600000,
+        "households_affected": null,
+        "people_displaced": 13900,
+        "fatalities_confirmed": 43,
+        "injured": 17,
+        "houses_damaged": 460,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": 1680000000,
+        "shelter_occupancy_pct": 150,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 65,
+        "health_facilities_operational_pct": 50,
+        "roads_accessible_pct": 40,
+        "bridges_destroyed": null,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 60,
+        "internet_connectivity_pct": 35,
+        "market_open": true,
+        "market_price_index": 1.5,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "MonCash",
+        "mobile_money_access_pct": 30,
+        "bank_account_access_pct": 20,
+        "agent_distance_km": 5,
+        "security_level": "Unsafe",
+        "female_headed_households_pct": 45,
+        "elderly_pct": 5,
+        "children_under5_pct": 10,
+        "disabled_pct": 10,
+        "refugee_or_migrant_pct": 2,
+        "priority_score": 95,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 10,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 4,
+        "data_last_verified_by": "PAHO",
+        "notes": "121 temporary shelters; high risk of cholera; 124 evacuated families; 25 deaths including 10 children; homes, roads, and crops destroyed; hunger crisis deepened."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-72.8545, 18.4311]
+      },
+      "properties": {
+        "id": 10250,
+        "disaster_event_id": "MELISSA_2025_HT",
+        "country": "Haiti",
+        "admin1_name": "Ouest",
+        "admin2_name": "Petit-Goave",
+        "impact_zone": "High",
+        "data_source": "OCHA, AP, USA Today, CARE, ReliefWeb, NPR",
+        "population_pre_disaster": 157000,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": 20,
+        "injured": 20,
+        "houses_damaged": 240,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 150,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 65,
+        "health_facilities_operational_pct": 50,
+        "roads_accessible_pct": 40,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 60,
+        "internet_connectivity_pct": 35,
+        "market_open": true,
+        "market_price_index": 1.5,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "MonCash",
+        "mobile_money_access_pct": 30,
+        "bank_account_access_pct": 20,
+        "agent_distance_km": 5,
+        "security_level": "Unsafe",
+        "female_headed_households_pct": 45,
+        "elderly_pct": 5,
+        "children_under5_pct": 10,
+        "disabled_pct": 10,
+        "refugee_or_migrant_pct": 2,
+        "priority_score": 95,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 10,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 4,
+        "data_last_verified_by": "OCHA",
+        "notes": "Catastrophic flooding of La Digue river; Notre Dame Hospital received deaths; 160 homes damaged, 80 destroyed; 28 deaths."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-72.374, 18.527]
+      },
+      "properties": {
+        "id": 10251,
+        "disaster_event_id": "MELISSA_2025_HT",
+        "country": "Haiti",
+        "admin1_name": "Ouest",
+        "admin2_name": "Fontamara",
+        "impact_zone": "High",
+        "data_source": "Posts, ReliefWeb",
+        "population_pre_disaster": null,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": 2,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 150,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 65,
+        "health_facilities_operational_pct": 50,
+        "roads_accessible_pct": 40,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 60,
+        "internet_connectivity_pct": 35,
+        "market_open": true,
+        "market_price_index": 1.5,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "MonCash",
+        "mobile_money_access_pct": 30,
+        "bank_account_access_pct": 20,
+        "agent_distance_km": 5,
+        "security_level": "Unsafe",
+        "female_headed_households_pct": 45,
+        "elderly_pct": 5,
+        "children_under5_pct": 10,
+        "disabled_pct": 10,
+        "refugee_or_migrant_pct": 2,
+        "priority_score": 95,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 10,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "Posts",
+        "notes": "Flooding; 2 deaths due to landslide."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-72.323, 18.2317]
+      },
+      "properties": {
+        "id": 10252,
+        "disaster_event_id": "MELISSA_2025_HT",
+        "country": "Haiti",
+        "admin1_name": "Sud-Est",
+        "admin2_name": "Marigot",
+        "impact_zone": "High",
+        "data_source": "Posts",
+        "population_pre_disaster": null,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": 1,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 150,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 65,
+        "health_facilities_operational_pct": 50,
+        "roads_accessible_pct": 40,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 60,
+        "internet_connectivity_pct": 35,
+        "market_open": true,
+        "market_price_index": 1.5,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "MonCash",
+        "mobile_money_access_pct": 30,
+        "bank_account_access_pct": 20,
+        "agent_distance_km": 5,
+        "security_level": "Unsafe",
+        "female_headed_households_pct": 45,
+        "elderly_pct": 5,
+        "children_under5_pct": 10,
+        "disabled_pct": 10,
+        "refugee_or_migrant_pct": 2,
+        "priority_score": 95,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 10,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "Posts",
+        "notes": "Flooding."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-72.5333, 18.2333]
+      },
+      "properties": {
+        "id": 10253,
+        "disaster_event_id": "MELISSA_2025_HT",
+        "country": "Haiti",
+        "admin1_name": "Sud-Est",
+        "admin2_name": null,
+        "impact_zone": "High",
+        "data_source": "PAHO",
+        "population_pre_disaster": 632000,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": 1,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 150,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 65,
+        "health_facilities_operational_pct": 50,
+        "roads_accessible_pct": 40,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 60,
+        "internet_connectivity_pct": 35,
+        "market_open": true,
+        "market_price_index": 1.5,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "MonCash",
+        "mobile_money_access_pct": 30,
+        "bank_account_access_pct": 20,
+        "agent_distance_km": 5,
+        "security_level": "Unsafe",
+        "female_headed_households_pct": 45,
+        "elderly_pct": 5,
+        "children_under5_pct": 10,
+        "disabled_pct": 10,
+        "refugee_or_migrant_pct": 2,
+        "priority_score": 95,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 10,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "PAHO",
+        "notes": "Main access road to Jacmel damaged; 1 death due to fallen tree."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-74.361, 18.325]
+      },
+      "properties": {
+        "id": 10254,
+        "disaster_event_id": "MELISSA_2025_HT",
+        "country": "Haiti",
+        "admin1_name": null,
+        "admin2_name": "Tiburon Peninsula",
+        "impact_zone": "High",
+        "data_source": "NHC",
+        "population_pre_disaster": null,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 150,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 65,
+        "health_facilities_operational_pct": 50,
+        "roads_accessible_pct": 40,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 60,
+        "internet_connectivity_pct": 35,
+        "market_open": true,
+        "market_price_index": 1.5,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "MonCash",
+        "mobile_money_access_pct": 30,
+        "bank_account_access_pct": 20,
+        "agent_distance_km": 5,
+        "security_level": "Unsafe",
+        "female_headed_households_pct": 45,
+        "elderly_pct": 5,
+        "children_under5_pct": 10,
+        "disabled_pct": 10,
+        "refugee_or_migrant_pct": 2,
+        "priority_score": 95,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 10,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "NHC",
+        "notes": "Strong winds lasting a day or more; catastrophic flash flooding and landslides."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-72.5354, 18.2343]
+      },
+      "properties": {
+        "id": 10271,
+        "disaster_event_id": "MELISSA_2025_HT",
+        "country": "Haiti",
+        "admin1_name": "Sud-Est",
+        "admin2_name": "Jacmel",
+        "impact_zone": "High",
+        "data_source": "PAHO",
+        "population_pre_disaster": null,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 150,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 65,
+        "health_facilities_operational_pct": 50,
+        "roads_accessible_pct": 40,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 60,
+        "internet_connectivity_pct": 35,
+        "market_open": true,
+        "market_price_index": 1.5,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "MonCash",
+        "mobile_money_access_pct": 30,
+        "bank_account_access_pct": 20,
+        "agent_distance_km": 5,
+        "security_level": "Unsafe",
+        "female_headed_households_pct": 45,
+        "elderly_pct": 5,
+        "children_under5_pct": 10,
+        "disabled_pct": 10,
+        "refugee_or_migrant_pct": 2,
+        "priority_score": 95,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 10,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T09:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "PAHO",
+        "notes": "Main access road damaged."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-72.335, 18.5392]
+      },
+      "properties": {
+        "id": 10272,
+        "disaster_event_id": "MELISSA_2025_HT",
+        "country": "Haiti",
+        "admin1_name": "Ouest",
+        "admin2_name": "Port-au-Prince",
+        "impact_zone": "High",
+        "data_source": "CARE",
+        "population_pre_disaster": null,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 150,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 65,
+        "health_facilities_operational_pct": 50,
+        "roads_accessible_pct": 40,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 60,
+        "internet_connectivity_pct": 35,
+        "market_open": true,
+        "market_price_index": 1.5,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "MonCash",
+        "mobile_money_access_pct": 30,
+        "bank_account_access_pct": 20,
+        "agent_distance_km": 5,
+        "security_level": "Unsafe",
+        "female_headed_households_pct": 45,
+        "elderly_pct": 5,
+        "children_under5_pct": 10,
+        "disabled_pct": 10,
+        "refugee_or_migrant_pct": 2,
+        "priority_score": 95,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 10,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T09:00:00Z",
+        "data_confidence_level": 4,
+        "data_last_verified_by": "CARE",
+        "notes": "Makeshift tents and homes flooded; families fled violence."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-69.9886, 18.5001]
+      },
+      "properties": {
+        "id": 10255,
+        "disaster_event_id": "MELISSA_2025_DR",
+        "country": "Dominican Republic",
+        "admin1_name": null,
+        "admin2_name": null,
+        "impact_zone": "Medium",
+        "data_source": "PAHO, ReliefWeb",
+        "population_pre_disaster": 10800000,
+        "people_affected": 1800000,
+        "households_affected": null,
+        "people_displaced": 3765,
+        "fatalities_confirmed": 4,
+        "injured": 16,
+        "houses_damaged": 750,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 120,
+        "cholera_risk_level": "Moderate",
+        "dengue_alert": false,
+        "water_access_pct": 90,
+        "health_facilities_operational_pct": 80,
+        "roads_accessible_pct": 70,
+        "bridges_destroyed": null,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 85,
+        "internet_connectivity_pct": 70,
+        "market_open": true,
+        "market_price_index": 1.2,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Banreservas",
+        "mobile_money_access_pct": 40,
+        "bank_account_access_pct": 55,
+        "agent_distance_km": 2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 30,
+        "elderly_pct": 8,
+        "children_under5_pct": 8,
+        "disabled_pct": 5,
+        "refugee_or_migrant_pct": 5,
+        "priority_score": 80,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 20,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 4,
+        "data_last_verified_by": "PAHO",
+        "notes": "32 water systems non-operational affecting 502,000; 48 communities cut off; 735 homes flooded, 17 partially damaged, 1 destroyed; 13 health facilities with minor damage."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-69.9296, 18.4834]
+      },
+      "properties": {
+        "id": 10256,
+        "disaster_event_id": "MELISSA_2025_DR",
+        "country": "Dominican Republic",
+        "admin1_name": "Distrito Nacional",
+        "admin2_name": "Santo Domingo",
+        "impact_zone": "Medium",
+        "data_source": "Posts, PAHO",
+        "population_pre_disaster": 2900000,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": 1,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 120,
+        "cholera_risk_level": "Moderate",
+        "dengue_alert": false,
+        "water_access_pct": 90,
+        "health_facilities_operational_pct": 80,
+        "roads_accessible_pct": 70,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 85,
+        "internet_connectivity_pct": 70,
+        "market_open": true,
+        "market_price_index": 1.2,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Banreservas",
+        "mobile_money_access_pct": 40,
+        "bank_account_access_pct": 55,
+        "agent_distance_km": 2,
+        "security_level": "Medium",
+        "female_headed_households_pct": 30,
+        "elderly_pct": 8,
+        "children_under5_pct": 8,
+        "disabled_pct": 5,
+        "refugee_or_migrant_pct": 5,
+        "priority_score": 80,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 20,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "El Día",
+        "notes": "Flooding and landslides; flooding in southern and central provinces."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-77.7812, 21.5218]
+      },
+      "properties": {
+        "id": 10257,
+        "disaster_event_id": "MELISSA_2025_CU",
+        "country": "Cuba",
+        "admin1_name": null,
+        "admin2_name": null,
+        "impact_zone": "High",
+        "data_source": "PAHO, OCHA, AP, USA Today, BBC, CARE, ReliefWeb, NPR",
+        "population_pre_disaster": 11300000,
+        "people_affected": 3000000,
+        "households_affected": null,
+        "people_displaced": 735000,
+        "fatalities_confirmed": 2,
+        "injured": 0,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": 1480000000,
+        "shelter_occupancy_pct": 130,
+        "cholera_risk_level": "High",
+        "dengue_alert": false,
+        "water_access_pct": 95,
+        "health_facilities_operational_pct": 100,
+        "roads_accessible_pct": 80,
+        "bridges_destroyed": null,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 70,
+        "internet_connectivity_pct": 70,
+        "market_open": true,
+        "market_price_index": 1.0,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "BPA",
+        "mobile_money_access_pct": 20,
+        "bank_account_access_pct": 70,
+        "agent_distance_km": 4,
+        "security_level": "Medium",
+        "female_headed_households_pct": 40,
+        "elderly_pct": 17,
+        "children_under5_pct": 5,
+        "disabled_pct": 5,
+        "refugee_or_migrant_pct": 0.1,
+        "priority_score": 70,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 15,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 4,
+        "data_last_verified_by": "OCHA",
+        "notes": "Over 2000000 may need assistance; telecommunication disruptions; 200 communities cut off by flooding and landslides; heavy losses in plantations."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-78.7617, 21.84]
+      },
+      "properties": {
+        "id": 10258,
+        "disaster_event_id": "MELISSA_2025_CU",
+        "country": "Cuba",
+        "admin1_name": "Ciego de Avila",
+        "admin2_name": null,
+        "impact_zone": "High",
+        "data_source": "Posts",
+        "population_pre_disaster": 430000,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 130,
+        "cholera_risk_level": "High",
+        "dengue_alert": false,
+        "water_access_pct": 95,
+        "health_facilities_operational_pct": 100,
+        "roads_accessible_pct": 80,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 70,
+        "internet_connectivity_pct": 70,
+        "market_open": true,
+        "market_price_index": 1.0,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "BPA",
+        "mobile_money_access_pct": 20,
+        "bank_account_access_pct": 70,
+        "agent_distance_km": 4,
+        "security_level": "Medium",
+        "female_headed_households_pct": 40,
+        "elderly_pct": 17,
+        "children_under5_pct": 5,
+        "disabled_pct": 5,
+        "refugee_or_migrant_pct": 0.1,
+        "priority_score": 70,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 15,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "Posts",
+        "notes": "75% power outage."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-75.8264, 20.0208]
+      },
+      "properties": {
+        "id": 10259,
+        "disaster_event_id": "MELISSA_2025_CU",
+        "country": "Cuba",
+        "admin1_name": "Santiago de Cuba",
+        "admin2_name": null,
+        "impact_zone": "High",
+        "data_source": "PAHO, BBC, NPR",
+        "population_pre_disaster": 1050000,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 130,
+        "cholera_risk_level": "High",
+        "dengue_alert": false,
+        "water_access_pct": 95,
+        "health_facilities_operational_pct": 100,
+        "roads_accessible_pct": 80,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 70,
+        "internet_connectivity_pct": 70,
+        "market_open": true,
+        "market_price_index": 1.0,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "BPA",
+        "mobile_money_access_pct": 20,
+        "bank_account_access_pct": 70,
+        "agent_distance_km": 4,
+        "security_level": "Medium",
+        "female_headed_households_pct": 40,
+        "elderly_pct": 17,
+        "children_under5_pct": 5,
+        "disabled_pct": 5,
+        "refugee_or_migrant_pct": 0.1,
+        "priority_score": 70,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 15,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "PAHO",
+        "notes": "Juan Bruno Zayas Alfonso Hospital severely impacted; 17 trapped in landslide; streets buried in debris; river overflows and flooding; road blockages cutting off 140,000 residents across 241 communities."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-75.9458, 20.0486]
+      },
+      "properties": {
+        "id": 10273,
+        "disaster_event_id": "MELISSA_2025_CU",
+        "country": "Cuba",
+        "admin1_name": "Santiago de Cuba",
+        "admin2_name": "El Cobre",
+        "impact_zone": "High",
+        "data_source": "AP, USA Today, BBC, NPR",
+        "population_pre_disaster": 7000,
+        "people_affected": 7000,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 130,
+        "cholera_risk_level": "High",
+        "dengue_alert": false,
+        "water_access_pct": 95,
+        "health_facilities_operational_pct": 100,
+        "roads_accessible_pct": 80,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 70,
+        "internet_connectivity_pct": 70,
+        "market_open": true,
+        "market_price_index": 1.0,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "BPA",
+        "mobile_money_access_pct": 20,
+        "bank_account_access_pct": 70,
+        "agent_distance_km": 4,
+        "security_level": "Medium",
+        "female_headed_households_pct": 40,
+        "elderly_pct": 17,
+        "children_under5_pct": 5,
+        "disabled_pct": 5,
+        "refugee_or_migrant_pct": 0.1,
+        "priority_score": 70,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 15,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T09:00:00Z",
+        "data_confidence_level": 4,
+        "data_last_verified_by": "AP",
+        "notes": "Zinc roofs torn off; houses collapsed; Basilica damaged; homes damaged by flooding; residents clearing streets; without electricity, internet, telephone."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.75, 19.95]
+      },
+      "properties": {
+        "id": 10274,
+        "disaster_event_id": "MELISSA_2025_CU",
+        "country": "Cuba",
+        "admin1_name": "Santiago de Cuba",
+        "admin2_name": "Guamá",
+        "impact_zone": "High",
+        "data_source": "CARE, ReliefWeb",
+        "population_pre_disaster": null,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 130,
+        "cholera_risk_level": "High",
+        "dengue_alert": false,
+        "water_access_pct": 95,
+        "health_facilities_operational_pct": 100,
+        "roads_accessible_pct": 80,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 70,
+        "internet_connectivity_pct": 70,
+        "market_open": true,
+        "market_price_index": 1.0,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "BPA",
+        "mobile_money_access_pct": 20,
+        "bank_account_access_pct": 70,
+        "agent_distance_km": 4,
+        "security_level": "Medium",
+        "female_headed_households_pct": 40,
+        "elderly_pct": 17,
+        "children_under5_pct": 5,
+        "disabled_pct": 5,
+        "refugee_or_migrant_pct": 0.1,
+        "priority_score": 70,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 15,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T09:00:00Z",
+        "data_confidence_level": 4,
+        "data_last_verified_by": "CARE",
+        "notes": "Landfall as Category 4; torrential rain and flash floods damaged homes, farms, infrastructure."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-77.3963, 25.0343]
+      },
+      "properties": {
+        "id": 10260,
+        "disaster_event_id": "MELISSA_2025_BS",
+        "country": "Bahamas",
+        "admin1_name": null,
+        "admin2_name": null,
+        "impact_zone": "High",
+        "data_source": "NHC, Posts, BBC, CARE",
+        "population_pre_disaster": 400000,
+        "people_affected": 420000,
+        "households_affected": null,
+        "people_displaced": 82000,
+        "fatalities_confirmed": 0,
+        "injured": null,
+        "houses_damaged": 9200,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": 3200000000,
+        "shelter_occupancy_pct": 140,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 98,
+        "health_facilities_operational_pct": 90,
+        "roads_accessible_pct": 80,
+        "bridges_destroyed": null,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 85,
+        "internet_connectivity_pct": 85,
+        "market_open": true,
+        "market_price_index": 1.3,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Bank of Bahamas",
+        "mobile_money_access_pct": 50,
+        "bank_account_access_pct": 70,
+        "agent_distance_km": 2.5,
+        "security_level": "Medium",
+        "female_headed_households_pct": 40,
+        "elderly_pct": 9,
+        "children_under5_pct": 6,
+        "disabled_pct": 3,
+        "refugee_or_migrant_pct": 15,
+        "priority_score": 75,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 25,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "NHC",
+        "notes": "Hurricane warning; airport closure expected; flooding disrupted parts; evacuated from southeast to New Providence."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-77.345, 25.06]
+      },
+      "properties": {
+        "id": 10261,
+        "disaster_event_id": "MELISSA_2025_BS",
+        "country": "Bahamas",
+        "admin1_name": "New Providence",
+        "admin2_name": "Nassau",
+        "impact_zone": "High",
+        "data_source": "Posts",
+        "population_pre_disaster": 274000,
+        "people_affected": null,
+        "households_affected": null,
+        "people_displaced": null,
+        "fatalities_confirmed": null,
+        "injured": null,
+        "houses_damaged": null,
+        "infrastructure_damaged": null,
+        "economic_loss_usd": null,
+        "shelter_occupancy_pct": 140,
+        "cholera_risk_level": "High",
+        "dengue_alert": true,
+        "water_access_pct": 98,
+        "health_facilities_operational_pct": 90,
+        "roads_accessible_pct": 80,
+        "bridges_destroyed": 0,
+        "airport_status": null,
+        "port_status": null,
+        "mobile_network_coverage_pct": 85,
+        "internet_connectivity_pct": 85,
+        "market_open": true,
+        "market_price_index": 1.3,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Bank of Bahamas",
+        "mobile_money_access_pct": 50,
+        "bank_account_access_pct": 70,
+        "agent_distance_km": 2.5,
+        "security_level": "Medium",
+        "female_headed_households_pct": 40,
+        "elderly_pct": 9,
+        "children_under5_pct": 6,
+        "disabled_pct": 3,
+        "refugee_or_migrant_pct": 15,
+        "priority_score": 75,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 25,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 3,
+        "data_last_verified_by": "Posts",
+        "notes": "Projected 85% power grid failure; port closure; majority unaffected including Nassau."
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-110.0, 23.6345]
+      },
+      "properties": {
+        "id": 10262,
+        "disaster_event_id": "SONIA_2025_MX",
+        "country": "Mexico",
+        "admin1_name": "Baja California",
+        "admin2_name": null,
+        "impact_zone": "Low",
+        "data_source": "NHC, Watchers News, Wikipedia",
+        "population_pre_disaster": null,
+        "people_affected": 0,
+        "households_affected": null,
+        "people_displaced": 0,
+        "fatalities_confirmed": 0,
+        "injured": 0,
+        "houses_damaged": 0,
+        "infrastructure_damaged": 0,
+        "economic_loss_usd": 0,
+        "shelter_occupancy_pct": 100,
+        "cholera_risk_level": "Low",
+        "dengue_alert": false,
+        "water_access_pct": 90,
+        "health_facilities_operational_pct": 90,
+        "roads_accessible_pct": 80,
+        "bridges_destroyed": 0,
+        "airport_status": "Open",
+        "port_status": null,
+        "mobile_network_coverage_pct": 90,
+        "internet_connectivity_pct": 70,
+        "market_open": true,
+        "market_price_index": 1.0,
+        "cash_transfer_feasible": true,
+        "preferred_payment_partner": "Banorte",
+        "mobile_money_access_pct": 30,
+        "bank_account_access_pct": 49,
+        "agent_distance_km": 3,
+        "security_level": "Medium",
+        "female_headed_households_pct": 33,
+        "elderly_pct": 7,
+        "children_under5_pct": 8,
+        "disabled_pct": 5,
+        "refugee_or_migrant_pct": 8,
+        "priority_score": 60,
+        "required_funding_usd": null,
+        "funding_received_usd": null,
+        "percent_funded": 30,
+        "cash_target_households": null,
+        "cash_reached_households": null,
+        "last_updated": "2025-11-04T00:00:00Z",
+        "data_confidence_level": 5,
+        "data_last_verified_by": "NHC",
+        "notes": "Dissipated with no land impacts; formed 1343 km southwest of southern tip; peak winds 50 mph."
+      }
+    }
+  ]
+};
+  // === DATA STORE ===
+  const START_DATE = '2025-10-21';
+  const TOTAL_DAYS = 21; // 14 days past (21 Oct – 04 Nov) + 7 days future (05 Nov – 11 Nov)
+  const TODAY_INDEX = 14; // 04 Nov is day 14
+  // Filtered Sector Data (Mine Action & Refugee removed)
+  const SECTOR_DATA = [
+    { name: "Food Security", targeted: 16800000, reached: 6800000, req: 1580000000, fund: 312000000 },
+    { name: "Health", targeted: 9800000, reached: 2480000, req: 285000000, fund: 34000000 },
+    { name: "WASH", targeted: 12800000, reached: 3800000, req: 332000000, fund: 6800000 },
+    { name: "Shelter/NFIs", targeted: 2400000, reached: 380000, req: 248000000, fund: 4800000 },
+    { name: "General Protection", targeted: 3800000, reached: 198000, req: 81000000, fund: 12800000 },
+    { name: "Education", targeted: 3200000, reached: 318000, req: 112000000, fund: 10800000 },
+    { name: "Nutrition", targeted: 2500000, reached: 198000, req: 498000000, fund: 1580000 },
+    { name: "Child Protection", targeted: 3300000, reached: 468000, req: 98000000, fund: 4200000 },
+    { name: "Gender-Based Violence", targeted: 3400000, reached: 68000, req: 92000000, fund: 5800000 },
+    { name: "Site Management", targeted: 2100000, reached: 248000, req: 17800000, fund: 80000 },
+    { name: "Multi-Purpose Cash", targeted: 1900000, reached: 598000, req: 218000000, fund: 9200000 }
+  ];
+  // Country Data (Max potential impact) - UPDATED TO 04 NOV 2025
+  const COUNTRY_DATA = {
+    "All": { name: "All Countries", coords: [20, -75] },
+    "Jamaica": { name: "Jamaica", coords: [18.1096, -77.2975], storm: "Melissa", affected: 1950000, displaced: 380000, houses: 52000, dead: 35, economic: 22000000000, landfallDay: 8 }, // Landfall Oct 29
+    "Haiti": { name: "Haiti", coords: [18.9712, -72.2852], storm: "Melissa", affected: 680000, displaced: 138000, houses: 18200, dead: 43, economic: 1680000000, landfallDay: 9 }, // Landfall Oct 30
+    "Cuba": { name: "Cuba", coords: [21.5218, -77.7812], storm: "Melissa", affected: 820000, displaced: 168000, houses: 26800, dead: 2, economic: 1480000000, landfallDay: 11 }, // Landfall 31 Oct
+    "Bahamas": { name: "Bahamas", coords: [25.0343, -77.3963], storm: "Melissa", affected: 420000, displaced: 82000, houses: 9200, dead: 0, economic: 3200000000, landfallDay: 14 }, // Landfall 04 Nov
+    "Mexico": { name: "Mexico (Baja)", coords: [23.6345, -110.0], storm: "Sonia", affected: 0, displaced: 0, houses: 0, dead: 0, economic: 0, landfallDay: 3 } // Dissipated
+  };
+  // Track Data (Extended to 21 days: 0–21)
+  const TRACKS = {
+    Melissa: [
+      [13.2,-59.8],[14.8,-64.2],[16.5,-70.1],[17.8,-75.0],[18.1,-77.3], // Days 0–4
+      [18.0,-78.0],[18.5,-77.5],[19.2,-73.8],[20.5,-72.1],[21.9,-71.9], // Days 5–9 (Jamaica, Haiti)
+      [22.8,-75.5],[23.8,-77.0],[24.5,-77.2],[25.2,-77.4],[26.0,-77.0], // Days 10–14 (Cuba, Bahamas)
+      [26.8,-76.5],[27.5,-75.8],[28.2,-74.5],[28.9,-73.8],[29.6,-73.1],[30.3,-72.4] // Days 15–20 (Moving away)
+    ],
+    Sonia: Array(22).fill([18.3, -123.0]) // Dissipated
+  };
+  // Simulated Impact Buffers (GeoJSON-like Polygons)
+  const IMPACT_BUFFERS = {
+    high: [[17.5,-78.5],[17.8,-77.0],[18.8,-73.5],[20.0,-71.8],[21.5,-72.2],[22.4,-75.0],[22.2,-76.0],[21.0,-72.5],[19.2,-74.0],[18.2,-77.5],[17.5,-78.5]],
+    medium: [[17.2,-79.0],[17.5,-76.5],[18.5,-73.0],[20.0,-71.0],[22.0,-71.8],[23.0,-75.0],[22.8,-76.5],[21.5,-73.0],[19.0,-74.5],[17.8,-78.0],[17.2,-79.0]],
+    low: [[16.8,-79.5],[17.0,-76.0],[18.0,-72.5],[20.0,-70.5],[22.5,-71.5],[23.5,-74.8],[23.2,-77.0],[21.0,-73.5],[18.5,-75.0],[17.2,-78.5],[16.8,-79.5]]
+  };
+  // === GLOBAL VARS ===
+  let map;
+  let impactBubbleLayer, trackLayer, hurricaneIconLayer, bufferLayer, mapTileLayer, countryLayer = L.layerGroup();
+  let selectedCountry = 'All';
+  let trendChart, fundingChart, mitigationChart;
+  let currentDay = TODAY_INDEX; // Start at "Today"
+  let currentKfigValues = { affected: 0, displaced: 0, houses: 0, dead: 0, economic: 0 };
+  // === THEME TOGGLE ===
+  function setupThemeToggle() {
+    const toggle = document.getElementById('themeSwitch');
+    toggle.onclick = () => {
+      const isDarkMode = document.body.classList.toggle('dark-mode');
+      localStorage.setItem('darkMode', isDarkMode);
+      // Re-draw charts for new theme colors
+      updateChartTheme();
+    };
+    // Check saved preference
+    if (localStorage.getItem('darkMode') === 'false') {
+      document.body.classList.remove('dark-mode');
+    } else {
+      document.body.classList.add('dark-mode');
+    }
+  }
+  // === MAP INITIALIZATION ===
+  function initMap() {
+    map = L.map('map').setView([20, -75], 5);
+    mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/{styleId}/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      styleId: document.body.classList.contains('dark-mode') ? 'dark_all' : 'light_all',
+      maxZoom: 18
+    }).addTo(map);
+    bufferLayer = L.layerGroup().addTo(map);
+    trackLayer = L.layerGroup().addTo(map);
+    impactBubbleLayer = L.layerGroup().addTo(map);
+    hurricaneIconLayer = L.layerGroup().addTo(map);
+    countryLayer.addTo(map);
+  
+    drawImpactBuffers(); // Draw static buffers
+  }
+  // === CHART INITIALIZATION ===
+  function initCharts() {
+    const isDark = document.body.classList.contains('dark-mode');
+    const gridColor = isDark ? '#444' : '#ccc';
+    const textColor = isDark ? '#e0e0e0' : '#333';
+  
+    Chart.defaults.color = textColor;
+    Chart.defaults.borderColor = gridColor;
+    // Trend Chart
+    trendChart = new Chart(document.getElementById('trendChart'), {
+      type: 'line',
+      data: { labels: [], datasets: [
+          { label: 'Affected (Observed)', data: [], borderColor: 'var(--un-red)', backgroundColor: 'rgba(239, 68, 68, 0.2)', fill: true, tension: 0.3 },
+          { label: 'Affected (Projection)', data: [], borderColor: 'var(--un-blue)', borderDash: [5, 5], fill: false, tension: 0.3 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { color: textColor } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { callback: (v) => formatNumK(v), color: textColor }, grid: { color: gridColor } },
+          x: { ticks: { color: textColor }, grid: { color: gridColor } }
+        }
+      }
+    });
+    // Funding Chart
+    fundingChart = new Chart(document.getElementById('fundingChart'), {
+      type: 'doughnut',
+      data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 10 }, color: textColor } } }
+      }
+    });
+    // Mitigation Chart
+    mitigationChart = new Chart(document.getElementById('mitigationChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Rapid Evacuation Orders', 'Functioning Early Warning', 'Pre-positioning Supplies', 'Rapid Search & Rescue', 'Reinforcing Shelters'],
+        datasets: [{
+          label: 'Potential Impact Reduction (%)',
+          data: [60, 45, 30, 35, 25],
+          backgroundColor: ['#0074b7', '#0ea5e9', '#22c55e', '#ef4444', '#f97316'],
+          barThickness: 20
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { max: 100, ticks: { callback: (v) => v + '%', color: textColor }, grid: { color: gridColor } },
+          y: { ticks: { font: { size: 10.5 }, color: textColor }, grid: { color: gridColor } }
+        }
+      }
+    });
+  }
+  // Update chart colors on theme change
+  function updateChartTheme() {
+    const isDark = document.body.classList.contains('dark-mode');
+    const gridColor = isDark ? '#444' : '#ccc';
+    const textColor = isDark ? '#e0e0e0' : '#333';
+  
+    Chart.defaults.color = textColor;
+    Chart.defaults.borderColor = gridColor;
+    const charts = [trendChart, fundingChart, mitigationChart];
+    charts.forEach(chart => {
+      chart.options.plugins.legend.labels.color = textColor;
+      if (chart.options.scales.x) {
+        chart.options.scales.x.ticks.color = textColor;
+        chart.options.scales.x.grid.color = gridColor;
+      }
+      if (chart.options.scales.y) {
+        chart.options.scales.y.ticks.color = textColor;
+        chart.options.scales.y.grid.color = gridColor;
+      }
+      chart.update();
+    });
+  
+    // Reload map tiles for new theme
+    if (mapTileLayer) {
+        mapTileLayer.setUrl(mapTileLayer._url, false); // Force re-fetch of tiles
+        mapTileLayer.options.styleId = isDark ? 'dark_all' : 'light_all';
+        mapTileLayer.redraw();
+    }
+  }
+  // === INTERACTIVITY & LOGIC ===
+  // Timeline
+  function setupTimeline() {
+    const timeline = document.getElementById('timeline');
+    const thumb = document.getElementById('thumb');
+    const pastBar = document.getElementById('pastBar');
+    const futureBar = document.getElementById('futureBar');
+    const todayMarker = document.getElementById('todayMarker');
+    const currentDateLabel = document.getElementById('currentDateLabel');
+    const startDateLabel = document.getElementById('startDateLabel');
+    const endDateLabel = document.getElementById('endDateLabel');
+    const todayPct = (TODAY_INDEX / TOTAL_DAYS) * 100;
+    todayMarker.style.left = `${todayPct}%`;
+  
+    const baseDate = new Date(START_DATE);
+    const endDate = new Date(baseDate);
+    endDate.setDate(baseDate.getDate() + TOTAL_DAYS);
+  
+    startDateLabel.textContent = new Date(START_DATE).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    endDateLabel.textContent = endDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    function updateTimelineVisuals(day) {
+      currentDay = day;
+      const pct = (day / TOTAL_DAYS) * 100;
+      thumb.style.left = `${pct}%`;
+      pastBar.style.width = `${pct}%`;
+      futureBar.style.left = `${pct}%`;
+      futureBar.style.width = `${100 - pct}%`;
+    
+      const date = new Date(START_DATE);
+      date.setDate(date.getDate() + day);
+    
+      let label = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      if (day === TODAY_INDEX) label = `${label} (Today)`;
+      currentDateLabel.textContent = label;
+    }
+    updateTimelineVisuals(currentDay); // Set initial position
+    let isDragging = false;
+    const handleDrag = (e) => {
+      e.preventDefault();
+      const rect = timeline.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      let x = clientX - rect.left;
+      let day = Math.round((x / rect.width) * TOTAL_DAYS);
+      day = Math.max(0, Math.min(TOTAL_DAYS, day));
+    
+      if (day !== currentDay) {
+        updateTimelineVisuals(day);
+        updateDashboard(); // Filter everything
+      }
+    };
+    const startDrag = (e) => {
+      isDragging = true;
+      thumb.style.cursor = 'grabbing';
+      handleDrag(e);
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+      document.addEventListener('touchmove', onMove, { passive: false });
+      document.addEventListener('touchend', onUp);
+    };
+    const onMove = (e) => { if (isDragging) handleDrag(e); };
+    const onUp = () => {
+      isDragging = false;
+      thumb.style.cursor = 'grab';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onUp);
+    };
+    timeline.addEventListener('mousedown', startDrag);
+    timeline.addEventListener('touchstart', startDrag, { passive: false });
+  }
+  // Country Buttons
+  function setupCountryButtons() {
+    const btnContainer = document.getElementById('countryButtons');
+    const uniqueCountries = [...new Set(GEOJSON_DATA.features.map(f => f.properties.country))];
+    uniqueCountries.unshift('All');
+    uniqueCountries.forEach(country => {
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.textContent = country;
+      if (country === 'All') btn.classList.add('active');
+      btn.onclick = () => {
+        document.querySelectorAll('#countryButtons .btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedCountry = country;
+        updateDashboard();
+        const coords = COUNTRY_DATA[country] ? COUNTRY_DATA[country].coords : [20, -75];
+        map.setView(coords, country === 'All' ? 5 : 8, { animate: true });
+      };
+      btnContainer.appendChild(btn);
+    });
+  }
+  // === DASHBOARD UPDATE LOGIC ===
+  // Gets the % of total impact based on the day
+  function getScaleFactor(day, landfallDay) {
+    if (day < landfallDay - 2) return 0; // No impact before
+    if (day < landfallDay) return (day - (landfallDay - 2)) / 2 * 0.3; // Ramp up to 30% by landfall
+    if (day >= landfallDay + 3) return 1.0; // Full impact 3 days after
+    // After landfall, ramp from 30% to 100%
+    return 0.3 + ((day - landfallDay) / 3) * 0.7;
+  }
+  // Formats large numbers
+  function formatNum(n) {
+    if (n >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B';
+    if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    return n ? n.toLocaleString() : 'N/A';
+  }
+  function formatNumK(n) {
+    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
+    return n ? Math.round(n).toLocaleString() : 'N/A';
+  }
+  // Count-up animation
+  function animateValue(id, start, end, duration) {
+    const obj = document.getElementById(id);
+    if (!obj) return;
+    let startTimestamp = null;
+    const step = (timestamp) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const value = Math.floor(progress * (end - start) + start);
+    
+      if (id === 'kf-economic') obj.textContent = formatNum(value);
+      else obj.textContent = formatNumK(value);
+    
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    window.requestAnimationFrame(step);
+  }
+  // Main update function
+  function updateDashboard() {
+    const filteredFeatures = GEOJSON_DATA.features.filter(f => selectedCountry === 'All' || f.properties.country === selectedCountry);
+  
+    // 1. Aggregate Key Figures from filtered features
+    let agg = { affected: 0, displaced: 0, houses: 0, dead: 0, economic: 0 };
+  
+    filteredFeatures.forEach(feature => {
+      const props = feature.properties;
+      const country = props.country;
+      const landfallDay = COUNTRY_DATA[country] ? COUNTRY_DATA[country].landfallDay : TODAY_INDEX;
+      const scale = getScaleFactor(currentDay, landfallDay);
+    
+      agg.affected += (props.people_affected || 0) * scale;
+      agg.displaced += (props.people_displaced || 0) * scale;
+      agg.houses += (props.houses_damaged || 0) * scale;
+      agg.dead += (props.fatalities_confirmed || 0) * scale;
+      agg.economic += (props.economic_loss_usd || 0) * scale;
+    });
+    // Call count-up animations
+    animateValue('kf-affected', currentKfigValues.affected, agg.affected, 800);
+    animateValue('kf-displaced', currentKfigValues.displaced, agg.displaced, 800);
+    animateValue('kf-houses', currentKfigValues.houses, agg.houses, 800);
+    animateValue('kf-dead', currentKfigValues.dead, agg.dead, 800);
+    animateValue('kf-economic', currentKfigValues.economic, agg.economic, 800);
+  
+    currentKfigValues = agg; // Store new values
+    // 2. Update Map
+    drawTracksAndHurricanes();
+    drawImpactBubbles(); // Red/Blue bubbles logic
+    if (selectedCountry !== 'All') {
+      let bounds = L.latLngBounds(filteredFeatures.map(f => f.geometry.coordinates.reverse()));
+      map.fitBounds(bounds, { padding: [50, 50] });
+    } else {
+      map.setView([20, -75], 5);
+    }
+    // 3. Update Summary & Analysis Text
+    updateSummaryText(agg, filteredFeatures);
+    updateAnalysisSection(filteredFeatures);
+    // 4. Update Sector Table (Data is static, but visuals update)
+    updateSectorTable();
+    // 5. Update Trend Chart
+    const labels = Array.from({length: TOTAL_DAYS+1}, (_,i) => {
+      const d = new Date(START_DATE); d.setDate(new Date(START_DATE).getDate() + i);
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    });
+  
+    let baseData = labels.map((_, i) => {
+        let dayAgg = 0;
+        filteredFeatures.forEach(feature => {
+            const props = feature.properties;
+            const country = props.country;
+            const landfallDay = COUNTRY_DATA[country] ? COUNTRY_DATA[country].landfallDay : TODAY_INDEX;
+            dayAgg += (props.people_affected || 0) * getScaleFactor(i, landfallDay);
+        });
+        return dayAgg;
+    });
+    let actuals = baseData.map((d, i) => (i <= TODAY_INDEX ? d : NaN));
+    let projections = baseData.map((d, i) => (i >= TODAY_INDEX ? d : NaN));
+  
+    actuals[TODAY_INDEX + 1] = NaN; // Stop red line
+    projections[TODAY_INDEX] = baseData[TODAY_INDEX]; // Start blue line
+    trendChart.data.labels = labels;
+    trendChart.data.datasets[0].data = actuals;
+    trendChart.data.datasets[1].data = projections;
+    trendChart.update();
+    // 6. Update Funding Chart (Static data, just needs one render)
+    if (!fundingChart.data.datasets[0].data.length) {
+      fundingChart.data.labels = SECTOR_DATA.map(s => s.name);
+      fundingChart.data.datasets[0].data = SECTOR_DATA.map(s => s.fund);
+      fundingChart.data.datasets[0].backgroundColor = SECTOR_DATA.map((_,i) => `hsl(${(i*360/SECTOR_DATA.length + 200) % 360}, 70%, 60%)`);
+      fundingChart.update();
+    }
+    // 7. Update Cash Table
+    updateCashTable(filteredFeatures);
+  }
+  function updateCashTable(features) {
+    const tbody = document.querySelector('#cashTable tbody');
+    tbody.innerHTML = '';
+    features.forEach(feature => {
+      const props = feature.properties;
+      const location = props.admin2_name || props.admin1_name || props.country;
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${location}</td>
+        <td>${props.cash_transfer_feasible ? 'Yes' : 'No'}</td>
+        <td>${props.preferred_payment_partner || 'N/A'}</td>
+        <td>${props.mobile_money_access_pct || 'N/A'}%</td>
+        <td>${props.bank_account_access_pct || 'N/A'}%</td>
+        <td>${props.agent_distance_km || 'N/A'}</td>
+        <td>${props.security_level || 'N/A'}</td>
+        <td>${formatNumK(props.cash_target_households || 0)}</td>
+        <td>${formatNumK(props.cash_reached_households || 0)}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+  // === SUB-UPDATE FUNCTIONS ===
+  function updateSectorTable() {
+    const tbody = document.querySelector('#sectorTable tbody');
+    tbody.innerHTML = '';
+    SECTOR_DATA.forEach(s => {
+      const row = document.createElement('tr');
+      const fundedPct = Math.round((s.fund / s.req) * 100);
+      const unmet = s.req - s.fund;
+    
+      let barClass = 'bar-fill';
+      if (fundedPct < 20) barClass += ' low';
+      else if (fundedPct < 50) barClass += ' med';
+      row.innerHTML = `
+        <td class="sector-name">${s.name}</td>
+        <td>${formatNumK(s.targeted)}</td>
+        <td>${formatNumK(s.reached)}</td>
+        <td>${formatNum(s.req)}</td>
+        <td>${formatNum(s.fund)}</td>
+        <td>
+          <div class="bar-container">
+            <div class="${barClass}" style="width:0%"></div>
+            <div class="bar-label">${formatNum(unmet)}</div>
+          </div>
+        </td>
+        <td class="pct">${fundedPct}%</td>
+      `;
+      tbody.appendChild(row);
+      // Animate bar
+      setTimeout(() => {
+        const bar = row.querySelector('.bar-fill');
+        if (bar) bar.style.width = `${fundedPct}%`;
+      }, 100);
+    });
+  }
+  // Draw static impact buffers
+  function drawImpactBuffers() {
+    bufferLayer.clearLayers();
+    L.polygon(IMPACT_BUFFERS.low, { color: 'var(--un-green)', weight: 0, fillColor: 'var(--un-green)', fillOpacity: 0.2 }).addTo(bufferLayer);
+    L.polygon(IMPACT_BUFFERS.medium, { color: 'var(--un-orange)', weight: 0, fillColor: 'var(--un-orange)', fillOpacity: 0.2 }).addTo(bufferLayer);
+    L.polygon(IMPACT_BUFFERS.high, { color: 'var(--un-red)', weight: 0, fillColor: 'var(--un-red)', fillOpacity: 0.2 }).addTo(bufferLayer);
+  }
+  function drawTracksAndHurricanes() {
+    trackLayer.clearLayers();
+    hurricaneIconLayer.clearLayers();
+    Object.keys(TRACKS).forEach(storm => {
+      const path = TRACKS[storm];
+      const color = storm === 'Melissa' ? 'var(--un-red)' : 'var(--un-blue)';
+      const forecastColor = storm === 'Melissa' ? 'var(--un-blue)' : 'var(--un-blue-dark)';
+    
+      let pastTrack = [];
+      let futureTrack = [];
+      path.forEach((p, i) => {
+        if (i <= currentDay) pastTrack.push(p);
+        if (i >= currentDay) futureTrack.push(p);
+      });
+      if (pastTrack.length > 0) {
+        L.polyline(pastTrack, { color, weight: 3, opacity: 0.9 }).addTo(trackLayer);
+      }
+      if (futureTrack.length > 0) {
+         L.polyline(futureTrack, { color: forecastColor, weight: 3, opacity: 0.8, dashArray: '5, 10' }).addTo(trackLayer);
+      }
+      // Draw hurricane icon at currentDay position
+      const pos = path[Math.min(currentDay, path.length - 1)];
+      const icon = L.divIcon({
+        html: `<svg class="hurricane-icon-svg" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" width="30" height="30"><path d="M21 12A9 9 0 1 1 3 12a9 9 0 0 1 18 0Z" stroke-opacity="0.5"/><path d="M12 2v4M12 18v4M4 12H2M22 12h-2M6 6l-2-2M18 18l2 2M6 18l-2 2M18 6l2 2" stroke-linecap="round"/><circle cx="12" cy="12" r="2" fill="${color}" stroke="none"/></svg>`,
+        className: '', iconSize: [30,30], iconAnchor: [15,15]
+      });
+      // Only show icon if it's on the map
+      if(pos[0] > 0) {
+        L.marker(pos, { icon }).addTo(hurricaneIconLayer);
+      }
+    });
+  }
+  function drawImpactBubbles() {
+    impactBubbleLayer.clearLayers();
+  
+    GEOJSON_DATA.features.forEach(feature => {
+      const props = feature.properties;
+      const country = props.country;
+      if (selectedCountry !== 'All' && selectedCountry !== country) return;
+      const coords = feature.geometry.coordinates.reverse(); // Leaflet uses [lat, lng]
+      const affected = props.people_affected || 0;
+      const landfallDay = COUNTRY_DATA[country] ? COUNTRY_DATA[country].landfallDay : TODAY_INDEX;
+      const scale = getScaleFactor(currentDay, landfallDay);
+      const scaledAffected = affected * scale;
+      let color = scaledAffected > 0 ? 'var(--un-red)' : 'var(--un-blue)';
+      let className = scaledAffected > 0 ? 'map-bubble-past' : 'map-bubble-future';
+      const radius = 5 + Math.log(scaledAffected + 1) * 1.5;
+      let popupContent = `<strong>${props.admin2_name || props.admin1_name || props.country} (${props.impact_zone})</strong><br>`;
+      popupContent += `Affected: ${formatNumK(scaledAffected)}<br>`;
+      popupContent += `Displaced: ${formatNumK(props.people_displaced || 0)}<br>`;
+      popupContent += `Fatalities: ${props.fatalities_confirmed || 0}<br>`;
+      popupContent += `Cash Feasible: ${props.cash_transfer_feasible ? 'Yes' : 'No'}<br>`;
+      popupContent += `Preferred Partner: ${props.preferred_payment_partner || 'N/A'}<br>`;
+      popupContent += `Mobile Access: ${props.mobile_money_access_pct || 'N/A'}%<br>`;
+      popupContent += `Bank Access: ${props.bank_account_access_pct || 'N/A'}%<br>`;
+      popupContent += `Agent Distance: ${props.agent_distance_km || 'N/A'} km<br>`;
+      popupContent += `Security: ${props.security_level || 'N/A'}<br>`;
+      popupContent += `Notes: ${props.notes || 'N/A'}`;
+      L.circleMarker(coords, {
+        radius: radius,
+        fillColor: color,
+        color: color,
+        weight: 2,
+        fillOpacity: 0.6,
+        className: className
+      }).bindPopup(popupContent).addTo(impactBubbleLayer);
+    });
+  }
+  function updateSummaryText(agg, filteredFeatures) {
+    const summaryEl = document.getElementById('summaryText');
+    let html = '';
+    if (selectedCountry === 'All') {
+        html = `<strong>Situation as of 04 Nov 2025:</strong> Hurricane Melissa (Cat 3) made landfall in the Bahamas today. <strong>${formatNumK(agg.affected)} people affected</strong> across Jamaica, Haiti, Cuba, and Bahamas. Relief efforts ongoing.`;
+        html += `<br><br><strong>WDC Response:</strong> WFP airlifting 140MT food from Panama. IFRC deploying 4 field hospitals. ETC restoring comms in Jamaica. Priority: <strong>Search & Rescue in Bahamas</strong>, <strong>WASH in Haiti</strong>, <strong>recovery in Jamaica and Cuba</strong>.`;
+    } else {
+        html = `<strong>Situation in ${selectedCountry} as of 04 Nov 2025:</strong> <strong>${formatNumK(agg.affected)} people affected</strong>.`;
+        // Add country specific from notes
+        let notes = '';
+        filteredFeatures.forEach(f => {
+            notes += f.properties.notes + ' ';
+        });
+        html += ` ${notes.trim() || 'No specific notes.'}`;
+        html += `<br><br><strong>WDC Response:</strong> Tailored to ${selectedCountry}.`;
+    }
+    summaryEl.innerHTML = html;
+  }
+  // NEW: Dynamic Analysis Section
+  function updateAnalysisSection(filteredFeatures) {
+    const infra = document.getElementById('analysis-infra');
+    const logs = document.getElementById('analysis-logistics');
+    const health = document.getElementById('analysis-health');
+    const supply = document.getElementById('analysis-supply');
+    const comms = document.getElementById('analysis-comms');
+    // Clear previous
+    infra.innerHTML = '';
+    logs.innerHTML = '';
+    health.innerHTML = '';
+    supply.innerHTML = '';
+    comms.innerHTML = '';
+    if (selectedCountry === 'All') {
+        // Original logic based on day
+        // Infrastructure
+        if (currentDay < 8) {
+          infra.innerHTML = `<li><span class="projection">All systems operational.</span></li><li><span class="projection">Monitoring grid stability in Jamaica.</span></li>`;
+        } else if (currentDay <= 13) { // Jamaica/Haiti/Cuba Impact
+          infra.innerHTML = `<li><strong>75% power outage</strong> in eastern Cuba (Ciego de Ávila).</li><li><strong>Kingston Port</strong> reopened at 70% capacity.</li><li><span class="projection">Nassau Airport closure expected 04 Nov.</span></li>`;
+        } else { // Bahamas Impact/Projection
+          infra.innerHTML = `<li><strong>85% power grid failure</strong> in The Bahamas (Nassau).</li><li>Cellular network failure reported 12hrs post-landfall.</li><li>Nassau Port & Airport <strong>closed for 4-6 days</strong>.</li>`;
+        }
+        // Logistics
+        if (currentDay < 8) {
+          logs.innerHTML = `<li><span class="projection">WFP initiating <strong>anticipatory e-money</strong> distribution.</span></li><li><span class="projection">IFRC pre-positioning stock from Panama hub.</span></li>`;
+        } else if (currentDay <= 13) { // Jamaica/Haiti/Cuba Impact
+          logs.innerHTML = `<li><strong>160,000 cut off</strong> in Haiti (Sud-Est).</li><li>WFP air-bridge operational from Panama.</li><li><span class="projection">All outer island access in Bahamas to be severed by 05 Nov.</span></li>`;
+        } else { // Bahamas Impact
+          logs.innerHTML = `<li><strong>Evacuation routes</strong> from low-lying islands disrupted.</li><li>Anticipatory cash distributions finalized.</li><li>All access to outer islands <strong>cut off</strong>.</li>`;
+        }
+        // Public Health
+        if (currentDay < 8) {
+          health.innerHTML = `<li><span class="projection">Hospitals reinforcing supplies.</span></li><li><span class="projection">Monitoring shelter capacity.</span></li>`;
+        } else if (currentDay <= 13) { // Jamaica/Haiti/Cuba Impact
+          health.innerHTML = `<li><strong>Cholera risk rising</strong> in Haiti (3 confirmed cases).</li><li>140% shelter occupancy in Jamaica.</li><li><span class="projection">Dengue surge expected in Bahamas post-flooding.</span></li>`;
+        } else { // Bahamas Impact
+          health.innerHTML = `<li><strong>WASH pre-positioning</strong> critical to prevent disease outbreak.</li><li>High risk of <strong>Dengue fever</strong> from standing water.</li><li>Risk of <strong>mold growth</strong> in 48-72h.</li>`;
+        }
+        // Supply Chain (NEW)
+        if (currentDay < 8) {
+          supply.innerHTML = `<li><span class="projection">Shipping lanes normal.</span></li><li><span class="projection">Fuel reserves stable.</span></li>`;
+        } else if (currentDay <= 13) {
+          supply.innerHTML = `<li><strong>Bauxite exports halted</strong> (Jamaica).</li><li><strong>Fuel reserves critical</strong> in Haiti.</li><li><span class="projection">85% of Bahamas imports at risk (Nassau Port).</span></li>`;
+        } else {
+          supply.innerHTML = `<li><strong>Nassau Port (BS):</strong> Closure confirmed. 85% of goods imports disrupted.</li><li><strong>Tourism:</strong> 100% halt for 3-5 weeks.</li><li>Regional shipping lanes (Windward Passage) rerouted.</li>`;
+        }
+       
+        // Comms & Sentiment (NEW)
+        if (currentDay < 8) {
+          comms.innerHTML = `<li><span class="projection">Top Need: Evacuation route info.</span></li><li><span class="projection">Misinfo: "Storm is weakening" (False).</span></li>`;
+        } else if (currentDay <= 13) {
+          comms.innerHTML = `<li><strong>Top need:</strong> "Need rescue", "Where is water?"</li><li><strong>Misinfo:</strong> Fake donation scams rising.</li><li>WDC launching rumor control PSAs.</li>`;
+        } else {
+          comms.innerHTML = `<li><strong>Top Need:</strong> "Where is shelter?", "Need food/water".</li><li><strong>Misinfo:</strong> Fake donation scams reported.</li><li>WDC "rumor control" PSAs active.</li>`;
+        }
+    } else {
+        // Country specific, aggregate or from main feature
+        let notes = '';
+        let avgWater = 0;
+        let count = 0;
+        filteredFeatures.forEach(f => {
+            notes += f.properties.notes + ' ';
+            if (f.properties.water_access_pct) {
+                avgWater += f.properties.water_access_pct;
+                count++;
+            }
+        });
+        avgWater = count > 0 ? Math.round(avgWater / count) : 'N/A';
+        infra.innerHTML = `<li><strong>Infrastructure:</strong> ${notes.trim() || 'No data'}</li>`;
+        logs.innerHTML = `<li><strong>Logistics:</strong> Roads accessible: ${filteredFeatures[0].properties.roads_accessible_pct || 'N/A'}%</li>`;
+        health.innerHTML = `<li><strong>Health:</strong> Water access: ${avgWater}%</li>`;
+        supply.innerHTML = `<li><strong>Supply Chain:</strong> Market open: ${filteredFeatures[0].properties.market_open ? 'Yes' : 'No'}</li>`;
+        comms.innerHTML = `<li><strong>Comms:</strong> Mobile coverage: ${filteredFeatures[0].properties.mobile_network_coverage_pct || 'N/A'}%</li>`;
+    }
+  }
+  // === INITIALIZE DASHBOARD ===
+  document.addEventListener('DOMContentLoaded', () => {
+    setupThemeToggle();
+    initMap();
+    initCharts();
+    setupTimeline();
+    setupCountryButtons();
+    updateDashboard(); // Run once on load
+  });
+</script>
+</body>
+</html>

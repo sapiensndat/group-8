@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=794, height=1123, initial-scale=1" />
+  <title>GROUP 8 — Global AI Readiness Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    /* "FUTURISTIC" STYLESHEET
+      - Dark mode by default
+      - Glassmorphism effects
+      - Animations
+    */
+    :root {
+      /* Color Palette (Dark Mode) */
+      --bg: #121212;
+      --card: #1e1e1e;
+      --card-light: #2a2a2a;
+      --text: #e0e0e0;
+      --muted: #888;
+      --border: #333;
+      --un-blue: #0ea5e9;
+      --un-blue-dark: #0284c7;
+      --un-red: #ef4444;
+      --un-red-light: #f87171;
+      --un-orange: #f97316;
+      --un-green: #22c55e;
+      --un-yellow: #eab308;
+     
+      --shadow: 0 4px 16px rgba(0,0,0,0.2);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.3);
+      --radius: 12px;
+      --a4-width: 794px;
+      --a4-height: 1123px; /* A4 aspect ratio */
+    }
+   
+    /* Light Mode Palette */
+    body:not(.dark-mode) {
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --card-light: #f0f0f0;
+      --text: #1b1b1a;
+      --muted: #6c757d;
+      --border: #dee2e6;
+      --un-blue: #009edb;
+      --un-blue-dark: #0074b7;
+      --un-red: #d90429;
+      --un-red-light: #ef233c;
+      --un-orange: #f77f00;
+      --un-green: #72bf44;
+      --un-yellow: #ffc800;
+      --shadow: 0 4px 16px rgba(0,0,0,0.07);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
+    }
+    /* Base & Animations */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+   
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse-red {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+   
+    @keyframes pulse-blue {
+      0% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(14, 165, 233, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+    }
+    body, html {
+      font-family: 'Inter', sans-serif;
+      background: #333; /* Outer background */
+      color: var(--text);
+      line-height: 1.5;
+      margin: 0;
+      padding: 0;
+    }
+    .page {
+      width: var(--a4-width);
+      min-height: var(--a4-height);
+      margin: 20px auto;
+      padding: 28px 32px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      box-shadow: 0 0 30px rgba(0,0,0,0.5);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: fadeIn 0.8s ease-out;
+    }
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--un-blue);
+    }
+    .logo {
+      width: 78px;
+      height: 78px;
+      background: var(--card-light);
+      border-radius: 12px;
+      padding: 6px;
+      box-shadow: var(--shadow);
+      flex-shrink: 0;
+    }
+    .logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .title-block { flex: 1; margin-left: 16px; }
+    .title { font-size: 22px; font-weight: 800; color: var(--un-blue); letter-spacing: -0.3px; }
+    .subtitle { font-size: 11.5px; color: var(--muted); margin-top: 3px; font-weight: 500; }
+    .meta { text-align: right; font-size: 10.5px; color: var(--muted); flex-shrink: 0; }
+    .meta .date { font-weight: 600; color: var(--text); }
+   
+    /* Theme Toggle */
+    .theme-switch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 5px;
+      cursor: pointer;
+    }
+    .toggle-track {
+      width: 40px;
+      height: 20px;
+      background: var(--card-light);
+      border-radius: 10px;
+      padding: 2px;
+      position: relative;
+      transition: background 0.3s;
+    }
+    .toggle-thumb {
+      width: 16px;
+      height: 16px;
+      background: var(--text);
+      border-radius: 50%;
+      position: absolute;
+      transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .theme-switch:hover .toggle-thumb { background: var(--un-blue); }
+    body:not(.dark-mode) .toggle-thumb {
+      transform: translateX(20px);
+    }
+    .theme-switch .icon { width: 16px; height: 16px; color: var(--muted); }
+    body.dark-mode .theme-switch .icon-moon { color: var(--un-blue); }
+    body:not(.dark-mode) .theme-switch .icon-sun { color: var(--un-yellow); }
+    /* Key Figures */
+    .key-figures {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .kfig {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      text-align: center;
+      transition: all 0.3s ease-in-out;
+      box-shadow: var(--shadow);
+      opacity: 0; /* For animation */
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+    /* Staggered animation delay */
+    .kfig:nth-child(1) { animation-delay: 0.1s; }
+    .kfig:nth-child(2) { animation-delay: 0.2s; }
+    .kfig:nth-child(3) { animation-delay: 0.3s; }
+    .kfig:nth-child(4) { animation-delay: 0.4s; }
+    .kfig:nth-child(5) { animation-delay: 0.5s; }
+    .kfig:nth-child(6) { animation-delay: 0.6s; }
+    .kfig:nth-child(7) { animation-delay: 0.7s; }
+    .kfig:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--un-blue);
+    }
+    .kfig .icon { width: 36px; height: 36px; margin: 0 auto 8px; color: var(--un-blue); }
+    .kfig .value { font-size: 1.6rem; font-weight: 800; color: var(--un-red); }
+    .kfig .label { font-size: 10.5px; color: var(--muted); margin-top: 4px; font-weight: 500; }
+    /* Filters */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 12px 0;
+      align-items: center;
+      background: var(--card);
+      padding: 10px 12px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      font-size: 11px;
+    }
+    .filter-group { display: flex; align-items: center; gap: 6px; }
+    .filter-group label { font-weight: 600; color: var(--text); white-space: nowrap; }
+    .btn-group { display: flex; gap: 5px; flex-wrap: wrap; }
+    .btn {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card-light);
+      color: var(--text);
+      font-size: 10.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn.active, .btn:hover {
+      background: var(--un-blue);
+      color: #fff;
+      border-color: var(--un-blue);
+      transform: scale(1.05);
+    }
+    /* Timeline Slider */
+    .timeline-container {
+      margin: 12px 0;
+      padding: 10px;
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .timeline {
+      position: relative;
+      height: 40px;
+      background: var(--card-light);
+      border-radius: 20px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .timeline-past { background: rgba(239, 68, 68, 0.2); position: absolute; left: 0; top: 0; height: 100%; z-index: 1; }
+    .timeline-future { background: rgba(14, 165, 233, 0.2); position: absolute; right: 0; top: 0; height: 100%; z-index: 1; }
+    .timeline-line { position: absolute; top: 50%; width: 100%; height: 3px; background: var(--un-red-light); transform: translateY(-50%); z-index: 2; }
+    .timeline-today-marker {
+      position: absolute; top: 0; height: 100%; width: 3px;
+      background: var(--un-red);
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.7);
+      transform: translateX(-50%);
+      z-index: 5;
+    }
+    .timeline-thumb {
+      position: absolute; top: 50%; width: 20px; height: 20px;
+      background: var(--un-red); border: 3px solid var(--card);
+      border-radius: 50%; transform: translate(-50%, -50%);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2); cursor: grab;
+      z-index: 10;
+      transition: transform 0.1s ease;
+    }
+    .timeline:active .timeline-thumb {
+      transform: translate(-50%, -50%) scale(1.2);
+    }
+    .timeline-labels {
+      display: flex; justify-content: space-between; margin-top: 6px; font-size: 10px; color: var(--muted);
+      padding: 0 5px;
+    }
+    #currentDateLabel {
+      font-weight: 700;
+      color: var(--un-red);
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    /* Map */
+    #map {
+      height: 380px; /* Increased height */
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      margin: 16px 0;
+      position: relative;
+      background: #333; /* Darker map bg */
+    }
+    /* Pulsing Bubbles */
+    .map-bubble-past, .map-bubble-future {
+      border-radius: 50%;
+    }
+    .map-bubble-past {
+      animation: pulse-red 2s infinite;
+    }
+    .map-bubble-future {
+      animation: pulse-blue 2s infinite;
+    }
+    .map-legend {
+      position: absolute; bottom: 12px; left: 12px;
+      /* Glassmorphism */
+      background: rgba(30, 30, 30, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 10px 12px; border-radius: 10px; font-size: 10px; z-index: 1000;
+      box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 6px;
+      color: var(--text);
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .legend-swath { width: 18px; height: 10px; opacity: 0.6; border: 1px solid #888; }
+    .hurricane-icon-static { width: 18px; height: 18px; }
+    /* Hurricane Animation */
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .hurricane-icon-svg {
+      animation: spin 6s linear infinite;
+    }
+    /* Sector Table */
+    .sector-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 10.5px;
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .sector-table th {
+      background: var(--un-blue-dark);
+      color: #fff;
+      padding: 10px 8px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 10px;
+    }
+    .sector-table td {
+      padding: 9px 8px;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+    }
+    .sector-table tr:hover td { background: var(--card-light); }
+    .sector-name { font-weight: 600; color: var(--un-blue); white-space: nowrap; }
+    .bar-container {
+      height: 18px; background: var(--card-light); border-radius: 9px; overflow: hidden; position: relative;
+    }
+    .bar-fill {
+      height: 100%; background: var(--un-green); width: 0%; transition: width 0.6s ease;
+    }
+    .bar-fill.low { background: var(--un-red-light); }
+    .bar-fill.med { background: var(--un-yellow); }
+    .bar-label {
+      position: absolute; left: 6px; top: 50%; transform: translateY(-50%);
+      font-size: 9px; color: #111; font-weight: 600; z-index: 1;
+    }
+    .pct { text-align: right; font-weight: 600; color: var(--un-green); }
+    /* Summary & Analysis */
+    .summary-box {
+      background: rgba(234, 179, 8, 0.1);
+      border-left: 5px solid var(--un-yellow);
+      padding: 14px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin: 16px 0;
+      font-size: 11.5px;
+      line-height: 1.5;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+    }
+    .summary-box h4 {
+      margin-bottom: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--un-blue);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    /* Analysis Section */
+    .analysis-section {
+      margin: 16px 0;
+    }
+    .analysis-section h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--un-blue);
+      border-bottom: 2px solid var(--un-blue);
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    /* Grid for 5 cards */
+    .analysis-grid.five-cards {
+      grid-template-columns: repeat(5, 1fr);
+    }
+    .analysis-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 14px;
+      font-size: 11px;
+      line-height: 1.45;
+      transition: all 0.3s ease-in-out;
+      opacity: 0; /* For animation */
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+    .analysis-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--un-blue);
+    }
+    .analysis-card h3 {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .analysis-card .icon { color: var(--un-red); }
+    .analysis-card ul {
+      padding-left: 16px;
+      margin: 0;
+      list-style-type: '— ';
+      color: var(--muted);
+    }
+    .analysis-card li { padding-left: 4px; margin-bottom: 4px; }
+    .analysis-card strong { color: var(--un-red-light); }
+    .analysis-card .projection { color: var(--un-blue); font-weight: 600; }
+   
+    /* Charts & Actions */
+    .charts-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .chart-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 12px;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease-in-out;
+      border: 1px solid var(--border);
+      opacity: 0; /* For animation */
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+    .chart-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--un-blue);
+    }
+    .chart-card h3 {
+      font-size: 12px; margin-bottom: 8px; color: var(--un-blue);
+      display: flex; align-items: center; gap: 6px; font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .chart-wrap { height: 160px; }
+    /* NEW Resilience Card Styles */
+    .resilience-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      min-height: 236px; /* Match mitigation chart height */
+    }
+    .resilience-content {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .resilience-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--un-green);
+      line-height: 1.2;
+      margin: 4px 0;
+    }
+    .resilience-value span {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .resilience-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 12px 0 8px 0;
+    }
+    .resilience-list {
+      font-size: 10.5px;
+      color: var(--muted);
+      padding-left: 18px;
+      margin: 0;
+    }
+    .resilience-list li {
+      margin-bottom: 4px;
+    }
+    .resilience-list strong {
+      color: var(--un-blue);
+    }
+   
+    /* Footer */
+    footer {
+      margin-top: 20px;
+      padding-top: 12px;
+      border-top: 1px dashed var(--border);
+      font-size: 9.5px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .disclaimer {
+      flex: 1;
+      line-height: 1.4;
+      margin-right: 16px;
+    }
+    .page-no {
+      background: var(--card-light);
+      padding: 4px 8px;
+      border-radius: 50%;
+      font-weight: 700;
+      font-size: 10px;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body class="dark-mode">
+<div class="page">
+  <header>
+    <div class="logo">
+      <img
+        src="https://x.ai/grok/logo.png"
+        alt="GROUP 8 Logo"
+        onerror="this.alt='GROUP 8 Logo (Path not found)'; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iI2FlYWVhZSI+PHBhdGggZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyszQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTMuMzEgMC02LTIuNjktNi02czIuNjktNiA2LTYgNiAyLjY5IDYgNi0yLjY5IDYtNiA2em00LTZoLTRWM2gtMnY5aDR2LTN6bS00IDRoMnYyaC0ydi0yem0tNCAwSDF2MmgzdjJINXYySDd2LTJoM3YtMnoiLz48L3N2Zz4='; this.style.padding='10px';"
+      >
+    </div>
+    <div class="title-block">
+      <div class="title">GROUP 8 — Global AI Readiness Dashboard</div>
+      <div class="subtitle">Skills, Connectivity, Adoption, Productivity, Investment & Risks</div>
+    </div>
+    <div class="meta">
+      <div>GROUP 8</div>
+      <div class="date" id="reportDate">03 December 2025, 09:00 EDT</div>
+     
+      <div class="theme-switch" id="themeSwitch" title="Toggle Theme">
+        <i data-lucide="moon" class="icon icon-moon"></i>
+        <div class="toggle-track">
+          <div class="toggle-thumb"></div>
+        </div>
+        <i data-lucide="sun" class="icon icon-sun"></i>
+      </div>
+    </div>
+  </header>
+  <div class="key-figures">
+    <div class="kfig"><div class="icon"><i data-lucide="cpu"></i></div><div class="value" id="kf-ai-training">90%</div><div class="label">AI Training %</div></div>
+    <div class="kfig"><div class="icon"><i data-lucide="book-open"></i></div><div class="value" id="kf-skill-readiness">81</div><div class="label">Skill Readiness</div></div>
+    <div class="kfig"><div class="icon"><i data-lucide="wifi"></i></div><div class="value" id="kf-connectivity">68%</div><div class="label">Connectivity</div></div>
+    <div class="kfig"><div class="icon"><i data-lucide="trending-up"></i></div><div class="value" id="kf-ai-adoption">78%</div><div class="label">AI Adoption</div></div>
+    <div class="kfig"><div class="icon"><i data-lucide="bar-chart"></i></div><div class="value" id="kf-productivity">+0.1-0.6%</div><div class="label">Productivity</div></div>
+    <div class="kfig"><div class="icon"><i data-lucide="dollar-sign"></i></div><div class="value" id="kf-investment">$109B</div><div class="label">Investment</div></div>
+    <div class="kfig"><div class="icon"><i data-lucide="alert-triangle"></i></div><div class="value" id="kf-risk-score">0.5</div><div class="label">Risk Score</div></div>
+  </div>
+  <div class="filters">
+    <div class="filter-group">
+      <label>Country/Region:</label>
+      <div class="btn-group" id="countryButtons">
+        <button class="btn active" data-filter="World">World</button>
+        <button class="btn" data-filter="High Income">High Income</button>
+        <button class="btn" data-filter="Upper Middle Income">Upper Middle Income</button>
+        <button class="btn" data-filter="Lower Middle Income">Lower Middle Income</button>
+        <button class="btn" data-filter="Low Income">Low Income</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Industry:</label>
+      <div class="btn-group" id="industryButtons">
+        <button class="btn active" data-filter="All">All</button>
+        <button class="btn" data-filter="ICT">ICT</button>
+        <button class="btn" data-filter="Finance">Finance</button>
+        <button class="btn" data-filter="Healthcare">Healthcare</button>
+        <button class="btn" data-filter="Agriculture">Agriculture</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Gender:</label>
+      <div class="btn-group" id="genderButtons">
+        <button class="btn active" data-filter="All">All</button>
+        <button class="btn" data-filter="Male">Male</button>
+        <button class="btn" data-filter="Female">Female</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Age:</label>
+      <div class="btn-group" id="ageButtons">
+        <button class="btn active" data-filter="All">All</button>
+        <button class="btn" data-filter="Youth">Youth</button>
+        <button class="btn" data-filter="Adult">Adult</button>
+        <button class="btn" data-filter="Elderly">Elderly</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Skill level:</label>
+      <div class="btn-group" id="skillButtons">
+        <button class="btn active" data-filter="All">All</button>
+        <button class="btn" data-filter="Basic">Basic</button>
+        <button class="btn" data-filter="Advanced">Advanced</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Urban/Rural:</label>
+      <div class="btn-group" id="urbanButtons">
+        <button class="btn active" data-filter="All">All</button>
+        <button class="btn" data-filter="Urban">Urban</button>
+        <button class="btn" data-filter="Rural">Rural</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <label>Time range:</label>
+      <div class="btn-group" id="timeButtons">
+        <button class="btn active" data-filter="2025">2025</button>
+        <button class="btn" data-filter="2030 Projection">2030 Projection</button>
+      </div>
+    </div>
+  </div>
+  <div id="map">
+    <div class="map-legend">
+      <div class="legend-item"><strong>Layers</strong></div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(239, 68, 68, 0.7); border: 1px solid var(--un-red);"></div> Demographics</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(14, 165, 233, 0.7); border: 1px solid var(--un-blue);"></div> Skills</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(249, 115, 22, 0.7); border: 1px solid var(--un-orange);"></div> Connectivity</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(34, 197, 94, 0.7); border: 1px solid var(--un-green);"></div> Tech Penetration</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(234, 179, 8, 0.7); border: 1px solid var(--un-yellow);"></div> AI Use by Sector</div>
+    </div>
+  </div>
+  <div class="charts-row">
+    <div class="chart-card" style="animation-delay: 1.1s;">
+      <h3><i data-lucide="trending-up"></i> Radar (skills)</h3>
+      <div class="chart-wrap"><canvas id="radarChart"></canvas></div>
+    </div>
+    <div class="chart-card" style="animation-delay: 1.2s;">
+      <h3><i data-lucide="pie-chart"></i> Heatmap (access)</h3>
+      <div class="chart-wrap"><canvas id="heatmapChart"></canvas></div>
+    </div>
+    <div class="chart-card" style="animation-delay: 1.3s;">
+      <h3><i data-lucide="bar-chart"></i> Bar (industry)</h3>
+      <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+    </div>
+    <div class="chart-card" style="animation-delay: 1.4s;">
+      <h3><i data-lucide="line-chart"></i> Line (AI growth)</h3>
+      <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
+    </div>
+  </div>
+  <div class="analysis-section">
+    <h2><i data-lucide="activity"></i> Results & Projections</h2>
+    <div class="timeline-container">
+      <div class="timeline" id="scenarioSlider">
+        <div class="timeline-past" id="scenarioPastBar"></div>
+        <div class="timeline-future" id="scenarioFutureBar"></div>
+        <div class="timeline-line"></div>
+        <div class="timeline-thumb" id="scenarioThumb"></div>
+      </div>
+      <div class="timeline-labels">
+        <span>Low AI Investment</span>
+        <span id="currentScenarioLabel">Medium AI Investment</span>
+        <span>High AI Investment</span>
+      </div>
+    </div>
+    <div class="key-figures">
+      <div class="kfig"><div class="icon"><i data-lucide="users"></i></div><div class="value" id="proj-jobs">12M</div><div class="label">Jobs Created</div></div>
+      <div class="kfig"><div class="icon"><i data-lucide="dollar-sign"></i></div><div class="value" id="proj-gdp">$3.5T</div><div class="label">GDP Impact</div></div>
+      <div class="kfig"><div class="icon"><i data-lucide="building"></i></div><div class="value" id="proj-sme">Moderate</div><div class="label">SME Growth</div></div>
+      <div class="kfig"><div class="icon"><i data-lucide="alert-triangle"></i></div><div class="value" id="proj-risk">Medium</div><div class="label">Risk Change</div></div>
+    </div>
+    <div class="summary-box" id="insightsBox">
+      <h4><i data-lucide="alert-triangle"></i> Auto-Generated Insights & Recommendations</h4>
+      <div id="insightsText">
+        Based on current filters: High-income regions lead in AI adoption (55%) but face ethical risks. Recommendation: Invest in governance frameworks to mitigate bias.
+      </div>
+    </div>
+  </div>
+  <footer>
+    <div class="disclaimer">
+      <strong>Sources:</strong> Primarily World Bank (Digital Progress and Trends Report 2025, World Development Indicators); IMF AI Preparedness Index; Stanford AI Index 2025; Salesforce Global AI Readiness Index. All figures are estimates based on 2025 data.
+    </div>
+    <div class="page-no">1</div>
+  </footer>
+</div>
+<script>
+  // === LUCIDE ICONS ===
+  lucide.createIcons();
+  // Sample Data (From Tool Results - Stanford, World Bank, etc.)
+  const DATA = {
+    'World': { aiTraining: '90%', skill: 81, connect: '68%', adoption: '78%', productivity: '+0.1-0.6%', investment: '$109B', risk: 0.5, radar: [66, 10, 42], heatmap: [93, 54, 27], bar: [70, 42, 30, 10], line: [2, 16] },
+    'High Income': { aiTraining: '66%', skill: 93, connect: '93%', adoption: '24%', productivity: '2%', investment: '$109B', risk: 0.8, radar: [80, 20, 60], heatmap: [95, 80, 50], bar: [80, 60, 40, 20], line: [5, 25] },
+    'Upper Middle Income': { aiTraining: '38%', skill: 81, connect: '81%', adoption: '5.8%', productivity: '16%', investment: '$9.3B', risk: 0.6, radar: [50, 15, 40], heatmap: [80, 60, 40], bar: [60, 50, 30, 15], line: [3, 18] },
+    'Lower Middle Income': { aiTraining: '21%', skill: 54, connect: '54%', adoption: '4.7%', productivity: '11%', investment: 'Low', risk: 0.4, radar: [30, 10, 20], heatmap: [60, 40, 20], bar: [40, 30, 20, 10], line: [2, 12] },
+    'Low Income': { aiTraining: '5%', skill: 27, connect: '27%', adoption: '0.7%', productivity: 'N/A', investment: 'Negligible', risk: 0.2, radar: [10, 5, 10], heatmap: [30, 20, 10], bar: [20, 10, 5, 5], line: [1, 5] }
+  };
+  const PROJECTIONS = [
+    { jobs: 'Balanced', gdp: '$3.5T', sme: 'Moderate', risk: 'Medium' },
+    { jobs: 'Minimal', gdp: '$2.6T', sme: 'Limited', risk: 'High' },
+    { jobs: 'Net Positive', gdp: '$4.4T', sme: 'Strong', risk: 'Low' }
+  ];
+  const LAYERS = ['Demographics', 'Skills', 'Connectivity', 'Tech Penetration', 'AI Use by Sector'];
+  let map, radarChart, heatmapChart, barChart, lineChart;
+  let currentFilters = { region: 'World', industry: 'All', gender: 'All', age: 'All', skill: 'All', urban: 'All', time: '2025' };
+  let currentScenario = 0;
+  // === THEME TOGGLE ===
+  function setupThemeToggle() {
+    const toggle = document.getElementById('themeSwitch');
+    toggle.onclick = () => {
+      document.body.classList.toggle('dark-mode');
+      updateChartTheme();
+    };
+  }
+  // === MAP INITIALIZATION ===
+  function initMap() {
+    map = L.map('map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '' }).addTo(map);
+    // Add placeholder layers (toggle visibility on click)
+    LAYERS.forEach((layer, i) => {
+      const overlay = L.layerGroup().addTo(map); // Placeholder
+      // Simulate click-to-filter
+      overlay.on('add', () => console.log(`Layer ${layer} added`));
+    });
+    // Hover insights (simulated)
+    map.on('mousemove', (e) => {
+      // Simulate tooltip
+    });
+  }
+  // === CHART INITIALIZATION ===
+  function initCharts() {
+    radarChart = new Chart(document.getElementById('radarChart'), {
+      type: 'radar',
+      data: { labels: ['Basic', 'Advanced', 'AI Specific'], datasets: [{ label: 'Skills', data: DATA['World'].radar, fill: true }] },
+      options: { responsive: true, scales: { r: { beginAtZero: true } } }
+    });
+    heatmapChart = new Chart(document.getElementById('heatmapChart'), {
+      type: 'doughnut',
+      data: { labels: ['High', 'Medium', 'Low'], datasets: [{ data: DATA['World'].heatmap }] },
+      options: { responsive: true }
+    });
+    barChart = new Chart(document.getElementById('barChart'), {
+      type: 'bar',
+      data: { labels: ['ICT', 'Finance', 'Healthcare', 'Agriculture'], datasets: [{ data: DATA['World'].bar }] },
+      options: { responsive: true }
+    });
+    lineChart = new Chart(document.getElementById('lineChart'), {
+      type: 'line',
+      data: { labels: ['2023', '2025'], datasets: [{ data: DATA['World'].line }] },
+      options: { responsive: true }
+    });
+  }
+  // Update Charts and KPIs
+  function updateDashboard() {
+    const data = DATA[currentFilters.region];
+    document.getElementById('kf-ai-training').textContent = data.aiTraining;
+    document.getElementById('kf-skill-readiness').textContent = data.skill;
+    document.getElementById('kf-connectivity').textContent = data.connect;
+    document.getElementById('kf-ai-adoption').textContent = data.adoption;
+    document.getElementById('kf-productivity').textContent = data.productivity;
+    document.getElementById('kf-investment').textContent = data.investment;
+    document.getElementById('kf-risk-score').textContent = data.risk;
+    // Update charts
+    radarChart.data.datasets[0].data = data.radar; radarChart.update();
+    heatmapChart.data.datasets[0].data = data.heatmap; heatmapChart.update();
+    barChart.data.datasets[0].data = data.bar; barChart.update();
+    lineChart.data.datasets[0].data = data.line; lineChart.update();
+    // Update insights
+    document.getElementById('insightsText').innerHTML = `Insights for ${currentFilters.region}: AI adoption at ${data.adoption}, with risks at ${data.risk}. Recommendation: Focus on skills in low-connectivity areas.`;
+    // Update projections
+    const proj = PROJECTIONS[currentScenario];
+    document.getElementById('proj-jobs').textContent = proj.jobs;
+    document.getElementById('proj-gdp').textContent = proj.gdp;
+    document.getElementById('proj-sme').textContent = proj.sme;
+    document.getElementById('proj-risk').textContent = proj.risk;
+  }
+  // Filter Button Listeners
+  document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const group = btn.parentNode;
+      group.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filterType = group.id.replace('Buttons', '').toLowerCase();
+      currentFilters[filterType] = btn.textContent;
+      updateDashboard();
+    });
+  });
+  // Scenario Slider
+  function setupScenarioSlider() {
+    const slider = document.getElementById('scenarioSlider');
+    const thumb = document.getElementById('scenarioThumb');
+    const pastBar = document.getElementById('scenarioPastBar');
+    const futureBar = document.getElementById('scenarioFutureBar');
+    const label = document.getElementById('currentScenarioLabel');
+    const labels = ['Low AI Investment', 'Medium AI Investment', 'High AI Investment'];
+    let isDragging = false;
+    function updateSlider(pos) {
+      const pct = pos * 100;
+      thumb.style.left = `${pct}%`;
+      pastBar.style.width = `${pct}%`;
+      futureBar.style.width = `${100 - pct}%`;
+      label.textContent = labels[pos];
+      currentScenario = pos;
+      updateDashboard();
+    }
+    slider.addEventListener('mousedown', () => isDragging = true);
+    document.addEventListener('mouseup', () => isDragging = false);
+    document.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const rect = slider.getBoundingClientRect();
+        let pos = (e.clientX - rect.left) / rect.width;
+        pos = Math.max(0, Math.min(1, pos));
+        const step = Math.round(pos * 2) / 2; // Snap to 0, 0.5, 1
+        updateSlider(step);
+      }
+    });
+    updateSlider(0.5); // Start at Medium
+  }
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+    setupThemeToggle();
+    initMap();
+    initCharts();
+    setupScenarioSlider();
+    updateDashboard();
+  });
+</script>
+</body>
+</html>

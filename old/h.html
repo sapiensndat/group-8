@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GROUP 8 — Global AI Readiness Dashboard</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+
+  <style>
+    /* === DESIGN SYSTEM === */
+    :root {
+      --bg-dark: #0f1115;
+      --bg-panel: #181b21;
+      --bg-panel-trans: rgba(24, 27, 33, 0.85);
+      --border: #2d333b;
+      --text-main: #e0e6ed;
+      --text-muted: #949ba6;
+      
+      /* Neon Accents */
+      --accent-blue: #38bdf8;
+      --accent-blue-glow: rgba(56, 189, 248, 0.3);
+      --accent-purple: #c084fc;
+      --accent-green: #4ade80;
+      --accent-red: #f87171;
+      --accent-orange: #fb923c;
+
+      --font-main: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      --radius: 12px;
+      --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: var(--font-main);
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      height: 100vh;
+      overflow-y: auto; /* Allow scroll for small screens */
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* === DASHBOARD CONTAINER (A4-ish Ratio) === */
+    .dashboard-container {
+      width: 100%;
+      max-width: 1200px;
+      display: grid;
+      grid-template-rows: auto auto auto 1fr auto;
+      gap: 16px;
+      background: radial-gradient(circle at top right, #1e293b 0%, var(--bg-dark) 40%);
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+
+    /* === 1. TITLE HEADER === */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .header-left h1 {
+      font-size: 24px;
+      font-weight: 800;
+      background: linear-gradient(to right, var(--accent-blue), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+    .header-left p {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .header-right {
+      text-align: right;
+    }
+    .badge {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid var(--accent-blue);
+      color: var(--accent-blue);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* === 2. FILTERS BAR === */
+    .filters-bar {
+      background: var(--bg-panel);
+      padding: 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .filter-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .btn-group {
+      display: flex;
+      gap: 4px;
+      background: #111;
+      padding: 3px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .btn-filter {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    .btn-filter:hover { color: var(--text-main); }
+    .btn-filter.active {
+      background: var(--accent-blue);
+      color: #000;
+      font-weight: 600;
+      box-shadow: 0 0 10px var(--accent-blue-glow);
+    }
+
+    /* === 3. KEY NUMBERS (KPIs) === */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .kpi-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s;
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent-blue);
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
+    }
+    .kpi-value {
+      font-family: var(--font-mono);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin: 8px 0 4px;
+    }
+    .kpi-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .kpi-icon {
+      color: var(--accent-blue);
+      width: 20px;
+      height: 20px;
+    }
+
+    /* === 4. MAP & PIE SECTION === */
+    .map-section {
+      position: relative;
+      height: 450px;
+      background: #0b0d10;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
+    }
+    #worldMap {
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      background: #0b0d10;
+    }
+    
+    /* Custom Map Markers & Legend */
+    .map-overlay-title {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: var(--bg-panel-trans);
+      backdrop-filter: blur(8px);
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-main);
+      pointer-events: none;
+    }
+    .map-legend {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      background: var(--bg-panel-trans);
+      backdrop-filter: blur(8px);
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .legend-gradient {
+      width: 150px;
+      height: 8px;
+      background: linear-gradient(to right, #1e293b, var(--accent-blue));
+      margin-bottom: 4px;
+      border-radius: 4px;
+    }
+    .legend-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    /* Ring Chart Marker CSS */
+    .ring-marker {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ring-svg {
+      transform: rotate(-90deg); /* Start from top */
+    }
+    .ring-circle-bg {
+      fill: none;
+      stroke: rgba(255,255,255,0.1);
+      stroke-width: 3;
+    }
+    .ring-circle-val {
+      fill: none;
+      stroke: var(--accent-orange);
+      stroke-width: 3;
+      stroke-linecap: round;
+      transition: stroke-dasharray 1s ease;
+    }
+
+    /* === 5. RESULTS & PROJECTIONS (Split View) === */
+    .bottom-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      min-height: 250px;
+    }
+    .panel-box {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+      text-transform: uppercase;
+    }
+    
+    /* Results Chart Area */
+    .results-content {
+      flex: 1;
+      display: flex;
+      gap: 16px;
+    }
+    .chart-mini-container {
+      flex: 1;
+      position: relative;
+      height: 100%;
+      min-height: 150px;
+    }
+
+    /* Projections Slider Area */
+    .slider-container {
+      margin: 10px 0 20px 0;
+    }
+    .projection-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      background: #333;
+      border-radius: 3px;
+      outline: none;
+    }
+    .projection-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--accent-green);
+      transition: transform 0.1s;
+    }
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    .projection-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .proj-stat-item {
+      background: rgba(255,255,255,0.03);
+      padding: 10px;
+      border-radius: 8px;
+      border-left: 3px solid var(--accent-green);
+    }
+    .proj-stat-val { font-size: 16px; font-weight: 700; color: var(--text-main); }
+    .proj-stat-lbl { font-size: 10px; color: var(--text-muted); }
+
+  </style>
+</head>
+<body>
+
+  <div class="dashboard-container">
+    
+    <header class="header">
+      <div class="header-left">
+        <h1>Global AI Readiness Dashboard</h1>
+        <p>Real-time insights on Skills, Connectivity, Adoption & Economic Impact</p>
+      </div>
+      <div class="header-right">
+        <span class="badge">Live Data: 2025</span>
+        <div style="font-size: 10px; color: #666; margin-top: 4px;">GROUP 8 Analysis</div>
+      </div>
+    </header>
+
+    <nav class="filters-bar">
+      <div class="filter-group">
+        <i data-lucide="globe" size="14"></i>
+        <span class="filter-label">Region</span>
+        <div class="btn-group" id="regionFilters">
+          <button class="btn-filter active" onclick="filterData('All')">World</button>
+          <button class="btn-filter" onclick="filterData('High')">High Income</button>
+          <button class="btn-filter" onclick="filterData('Mid')">Emerging</button>
+        </div>
+      </div>
+      <div class="filter-group">
+        <i data-lucide="briefcase" size="14"></i>
+        <span class="filter-label">Industry</span>
+        <div class="btn-group">
+          <button class="btn-filter active">All</button>
+          <button class="btn-filter">Tech</button>
+          <button class="btn-filter">Finance</button>
+          <button class="btn-filter">Health</button>
+        </div>
+      </div>
+      <div class="filter-group" style="margin-left: auto;">
+         <i data-lucide="filter" size="14"></i>
+         <span class="filter-label">Advanced Filters Active</span>
+      </div>
+    </nav>
+
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <i data-lucide="cpu" class="kpi-icon"></i>
+        <div class="kpi-value" id="kpi-readiness">62.4</div>
+        <div class="kpi-label">AI Readiness Index</div>
+      </div>
+      <div class="kpi-card">
+        <i data-lucide="wifi" class="kpi-icon" style="color: var(--accent-purple)"></i>
+        <div class="kpi-value" id="kpi-connectivity">89%</div>
+        <div class="kpi-label">5G Connectivity</div>
+      </div>
+      <div class="kpi-card">
+        <i data-lucide="users" class="kpi-icon" style="color: var(--accent-green)"></i>
+        <div class="kpi-value" id="kpi-training">45%</div>
+        <div class="kpi-label">Workforce Trained</div>
+      </div>
+      <div class="kpi-card">
+        <i data-lucide="dollar-sign" class="kpi-icon" style="color: var(--accent-orange)"></i>
+        <div class="kpi-value" id="kpi-investment">$142B</div>
+        <div class="kpi-label">Total Investment</div>
+      </div>
+      <div class="kpi-card">
+        <i data-lucide="activity" class="kpi-icon" style="color: var(--accent-red)"></i>
+        <div class="kpi-value" id="kpi-adoption">31%</div>
+        <div class="kpi-label">Adoption Rate</div>
+      </div>
+    </section>
+
+    <section class="map-section">
+      <div class="map-overlay-title">GLOBAL READINESS (Choropleth) & ADOPTION (Ring Charts)</div>
+      <div id="worldMap"></div>
+      
+      <div class="map-legend">
+        <div class="legend-labels" style="margin-bottom: 4px;">
+          <span>Low Readiness</span>
+          <span>High Readiness</span>
+        </div>
+        <div class="legend-gradient"></div>
+        <div style="font-size: 10px; color: #888; margin-top: 8px; display:flex; align-items:center; gap: 6px;">
+          <div style="width:10px; height:10px; border-radius:50%; border: 2px solid var(--accent-orange);"></div>
+          <span>Ring Size: Inv. Volume</span>
+        </div>
+      </div>
+    </section>
+
+    <footer class="bottom-section">
+      
+      <div class="panel-box">
+        <div class="panel-header">
+          <i data-lucide="bar-chart-2" color="var(--accent-blue)"></i>
+          <span class="panel-title">Current Results by Sector</span>
+        </div>
+        <div class="results-content">
+          <div class="chart-mini-container">
+            <canvas id="sectorChart"></canvas>
+          </div>
+          <div style="width: 120px; display: flex; flex-direction: column; justify-content: center; font-size: 11px; color: #888;">
+            <p><strong style="color: #fff">Analysis:</strong><br>Financial services lead adoption, while Agriculture lags in infrastructure.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-box">
+        <div class="panel-header">
+          <i data-lucide="trending-up" color="var(--accent-green)"></i>
+          <span class="panel-title">Future Projections</span>
+        </div>
+        
+        <div style="margin-bottom: 10px; font-size: 12px; color: var(--accent-green);">
+          Adjust Investment Scenario:
+        </div>
+        
+        <div class="slider-container">
+          <input type="range" min="1" max="3" value="2" class="projection-slider" id="scenarioSlider">
+          <div class="slider-labels">
+            <span>Conservative</span>
+            <span>Baseline</span>
+            <span>Aggressive</span>
+          </div>
+        </div>
+
+        <div class="projection-stats">
+          <div class="proj-stat-item">
+            <div class="proj-stat-val" id="proj-gdp">+1.2%</div>
+            <div class="proj-stat-lbl">GDP Impact (Annual)</div>
+          </div>
+          <div class="proj-stat-item">
+            <div class="proj-stat-val" id="proj-jobs">12M</div>
+            <div class="proj-stat-lbl">Jobs Created</div>
+          </div>
+          <div class="proj-stat-item">
+             <div class="proj-stat-val" id="proj-sme">High</div>
+             <div class="proj-stat-lbl">SME Access</div>
+          </div>
+          <div class="proj-stat-item" style="border-left-color: var(--accent-red)">
+             <div class="proj-stat-val" id="proj-risk">Medium</div>
+             <div class="proj-stat-lbl">Displacement Risk</div>
+          </div>
+        </div>
+      </div>
+
+    </footer>
+  </div>
+
+<script>
+    // 1. INITIALIZE ICONS
+    lucide.createIcons();
+
+    // 2. MOCK DATA & STATE
+    // This simulates the data for different filters to make it interactive
+    const DATASETS = {
+      'All': { kpi: [62.4, 89, 45, 142, 31], mapBase: 50 },
+      'High': { kpi: [88.1, 98, 72, 310, 55], mapBase: 80 },
+      'Mid': { kpi: [45.2, 65, 22, 45, 12], mapBase: 30 }
+    };
+    
+    const PROJECTIONS = {
+      1: { gdp: '+0.5%', jobs: '4M', risk: 'Low' },
+      2: { gdp: '+1.2%', jobs: '12M', risk: 'Medium' },
+      3: { gdp: '+2.8%', jobs: '35M', risk: 'High' }
+    };
+
+    // 3. MAP SETUP
+    // Using a Carto Dark Matter basemap for the futuristic look
+    const map = L.map('worldMap', {
+      zoomControl: false,
+      scrollWheelZoom: false,
+      attributionControl: false
+    }).setView([20, 0], 2);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19
+    }).addTo(map);
+
+    // Fetch World GeoJSON (Countries)
+    let geoJsonLayer;
+    fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
+      .then(response => response.json())
+      .then(data => {
+        
+        // Add Choropleth Layer
+        geoJsonLayer = L.geoJson(data, {
+          style: styleFeature,
+          onEachFeature: onEachFeature
+        }).addTo(map);
+
+        // Add "Ring Charts" (Simulated with Custom Icons)
+        addRingCharts(data);
+      });
+
+    // Style function for Choropleth (Color based on name length as a dummy hash for "Readiness")
+    function styleFeature(feature) {
+      const nameVal = feature.id ? feature.id.charCodeAt(0) : 50; 
+      // Simple logic to create variety in blues
+      const opacity = (nameVal % 10) / 10 * 0.6 + 0.1; 
+      
+      return {
+        fillColor: '#38bdf8', // accent-blue
+        weight: 1,
+        opacity: 1,
+        color: '#1e293b',
+        fillOpacity: opacity
+      };
+    }
+
+    // Interaction on Map
+    function onEachFeature(feature, layer) {
+      layer.on({
+        mouseover: (e) => {
+          const layer = e.target;
+          layer.setStyle({
+            weight: 2,
+            color: '#fff',
+            fillOpacity: 0.9
+          });
+        },
+        mouseout: (e) => {
+          geoJsonLayer.resetStyle(e.target);
+        }
+      });
+      // Simple Tooltip
+      layer.bindTooltip(`
+        <div style="text-align:center;">
+          <strong>${feature.properties.name}</strong><br/>
+          Readiness: ${Math.floor(Math.random() * 40 + 60)}/100
+        </div>
+      `, { sticky: true, className: 'custom-tooltip' });
+    }
+
+    // Function to add Ring Charts (SVG overlays)
+    function addRingCharts(geojson) {
+      // Pick random countries to show rings on to avoid clutter
+      geojson.features.forEach(feature => {
+        if(Math.random() > 0.85) { // Only 15% of countries get a ring
+          // Calculate Centroid roughly
+          // (In production use a proper centroid lib, here using Leaflet's getBounds center)
+          const tempLayer = L.geoJson(feature);
+          const center = tempLayer.getBounds().getCenter();
+          
+          // Create SVG Ring Icon
+          const percent = Math.floor(Math.random() * 100);
+          const circumference = 2 * Math.PI * 14; // r=14
+          const dash = (percent / 100) * circumference;
+          
+          const iconHtml = `
+            <div class="ring-marker">
+              <svg width="40" height="40" class="ring-svg">
+                <circle cx="20" cy="20" r="14" class="ring-circle-bg" />
+                <circle cx="20" cy="20" r="14" class="ring-circle-val" 
+                  stroke-dasharray="${dash} ${circumference}" />
+              </svg>
+              <div style="position:absolute; font-size:9px; font-weight:bold; color:#fff;">${percent}%</div>
+            </div>
+          `;
+          
+          const icon = L.divIcon({
+            html: iconHtml,
+            className: 'custom-div-icon',
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
+          });
+
+          L.marker(center, { icon: icon }).addTo(map);
+        }
+      });
+    }
+
+    // 4. CHART.JS SETUP
+    const ctx = document.getElementById('sectorChart').getContext('2d');
+    const sectorChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Fin', 'Health', 'Agri', 'Edu', 'Mfg'],
+        datasets: [{
+          label: 'AI Penetration',
+          data: [85, 65, 30, 45, 55],
+          backgroundColor: [
+            '#38bdf8', '#c084fc', '#4ade80', '#fb923c', '#f87171'
+          ],
+          borderWidth: 0,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#888', font: {size: 10} } },
+          y: { grid: { color: '#333' }, ticks: { color: '#888', font: {size: 10} } }
+        }
+      }
+    });
+
+    // 5. INTERACTIVITY LOGIC
+
+    // Filter Button Logic
+    function filterData(type) {
+      // Update Button Styles
+      const buttons = document.querySelectorAll('#regionFilters .btn-filter');
+      buttons.forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+
+      // Update KPIs with animation
+      const data = DATASETS[type];
+      animateValue('kpi-readiness', data.kpi[0]);
+      document.getElementById('kpi-connectivity').innerText = data.kpi[1] + '%';
+      document.getElementById('kpi-training').innerText = data.kpi[2] + '%';
+      document.getElementById('kpi-investment').innerText = '$' + data.kpi[3] + (type === 'All' ? 'B' : 'M'); // Just simpler logic
+      document.getElementById('kpi-adoption').innerText = data.kpi[4] + '%';
+
+      // Update Chart Data
+      sectorChart.data.datasets[0].data = sectorChart.data.datasets[0].data.map(() => Math.floor(Math.random() * 100));
+      sectorChart.update();
+      
+      // Flash Map Effect (Visual Feedback)
+      const mapEl = document.getElementById('worldMap');
+      mapEl.style.opacity = '0.5';
+      setTimeout(() => mapEl.style.opacity = '1', 300);
+    }
+
+    // Helper: Number Animation
+    function animateValue(id, end) {
+      const obj = document.getElementById(id);
+      let start = parseFloat(obj.innerText);
+      if(isNaN(start)) start = 0;
+      const duration = 500;
+      const startTime = performance.now();
+
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Ease out
+        const ease = 1 - Math.pow(1 - progress, 3);
+        
+        const current = start + (end - start) * ease;
+        obj.innerText = current.toFixed(1);
+
+        if (progress < 1) {
+          requestAnimationFrame(update);
+        }
+      }
+      requestAnimationFrame(update);
+    }
+
+    // Slider Logic
+    const slider = document.getElementById('scenarioSlider');
+    slider.addEventListener('input', (e) => {
+      const val = e.target.value;
+      const proj = PROJECTIONS[val];
+      
+      document.getElementById('proj-gdp').innerText = proj.gdp;
+      document.getElementById('proj-jobs').innerText = proj.jobs;
+      document.getElementById('proj-risk').innerText = proj.risk;
+      
+      // Color change based on risk
+      const riskEl = document.getElementById('proj-risk');
+      if(val == 3) riskEl.style.color = 'var(--accent-red)';
+      else riskEl.style.color = 'var(--text-main)';
+    });
+
+</script>
+</body>
+</html>
